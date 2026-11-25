@@ -1,0 +1,137 @@
+{
+  "title": "Gilded Engraving & Obsidian",
+  "text": "Rule: stone and ruins stay near-monochrome matte obsidian with crisp silhouettes; only gold, danger telegraphs, and curses glow with pure pigment. Mood: high-stakes gothic auction house. Shape: chiseled facets, tall gate arches, sharp shadows. Color: charcoal monochrome + leaf gold (value) + crimson (danger).",
+  "palette": [],
+  "tags": [
+    "3D",
+    "high-contrast",
+    "monochrome-plus-gold",
+    "top-down"
+  ],
+  "items": [
+    {
+      "file": "steam-4c11702b.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/894020/ss_dd9b5a2e40d3d512d1c978a5dfda5999c458a517.1920x1080.jpg?t=1788311627",
+      "page": "https://store.steampowered.com/app/894020/",
+      "title": "Death's Door — screenshot 1",
+      "credit": "Acid Nerve",
+      "license": "© Acid Nerve — moodboard only",
+      "api": "steam",
+      "query": "Death's Door",
+      "generated": false,
+      "note": "angled 3D stone courtyard, warm braziers vs dark slate hero",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "4c11702b1cfd19e4e38d8fe103c04b899892fc24"
+    },
+    {
+      "file": "steam-6e7e2e7d.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/894020/ss_46cbadf5477da2909c9ef5c4539a977314da03e0.1920x1080.jpg?t=1788311627",
+      "page": "https://store.steampowered.com/app/894020/",
+      "title": "Death's Door — screenshot 2",
+      "credit": "Acid Nerve",
+      "license": "© Acid Nerve — moodboard only",
+      "api": "steam",
+      "query": "Death's Door",
+      "generated": false,
+      "note": "crisp shadow edges & selective glow on interactive gates",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "6e7e2e7d77aef7142bb7598f45db555d72d6aa90"
+    },
+    {
+      "file": "steam-7e5280b7.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/894020/ss_bf0108947fe505dc28e4cf0cad288c57b4efeca0.1920x1080.jpg?t=1788311627",
+      "page": "https://store.steampowered.com/app/894020/",
+      "title": "Death's Door — screenshot 3",
+      "credit": "Acid Nerve",
+      "license": "© Acid Nerve — moodboard only",
+      "api": "steam",
+      "query": "Death's Door",
+      "generated": false,
+      "note": "boss arena silhouettes & high-contrast attack flashes",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "7e5280b7a57e54fb23c1d402b9ad2f6daf3dd48d"
+    },
+    {
+      "file": "steam-4d1eb390.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/894020/ss_83e57d823ecb8559cd3c70cef500b33d4b841787.1920x1080.jpg?t=1788311627",
+      "page": "https://store.steampowered.com/app/894020/",
+      "title": "Death's Door — screenshot 4",
+      "credit": "Acid Nerve",
+      "license": "© Acid Nerve — moodboard only",
+      "api": "steam",
+      "query": "Death's Door",
+      "generated": false,
+      "note": "restrained warm-gold accents on desaturated stone architecture",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "4d1eb3903e8c01b89a59b1bc62a3464565379802"
+    },
+    {
+      "file": "steam-58a138d5.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1123770/ss_1f9eec462da56aa29185a66accd8c3e5693a09a1.1920x1080.jpg?t=1727864458",
+      "page": "https://store.steampowered.com/app/1123770/",
+      "title": "Curse of the Dead Gods — screenshot 2",
+      "credit": "Passtech Games",
+      "license": "© Passtech Games — moodboard only",
+      "api": "steam",
+      "query": "Curse of the Dead Gods",
+      "generated": false,
+      "note": "pure violet curse glow cutting through near-black ink shadows",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "58a138d5a604a748cf305f6eb1ad31a5c6d3eced"
+    },
+    {
+      "file": "steam-360238bc.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1123770/ss_8c74d954e6e9492b160dc18b5f91b13e37ad9ddb.1920x1080.jpg?t=1727864458",
+      "page": "https://store.steampowered.com/app/1123770/",
+      "title": "Curse of the Dead Gods — screenshot 3",
+      "credit": "Passtech Games",
+      "license": "© Passtech Games — moodboard only",
+      "api": "steam",
+      "query": "Curse of the Dead Gods",
+      "generated": false,
+      "note": "torch radius vs shadow danger & sharp comic-ink shadow edges",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "360238bcf33f61055e4cb9c328f0090d401c283a"
+    },
+    {
+      "file": "wikimedia-9891da8e.jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0a/Albrecht_D%C3%BCrer%2C_Knight%2C_Death_and_Devil%2C_1513%2C_NGA_6637.jpg/1280px-Albrecht_D%C3%BCrer%2C_Knight%2C_Death_and_Devil%2C_1513%2C_NGA_6637.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Albrecht_D%C3%BCrer,_Knight,_Death_and_Devil,_1513,_NGA_6637.jpg",
+      "title": "German: Der Reiter (Ritter, Tod und Teufel) Knight, Death, and the Deviltitle QS:P1476,de:\"Der Reiter (Ritter, Tod und Teufel) \"label QS:Lde,\"Der Reiter (Ritter, Tod und Teufel) \"label QS:Les,\"El caballero, la muerte y el diablo\"label QS:Lfr,\"Le Chevalier, la Mort et le Diable\"label QS:Lsl,\"Vitez, smrt in hudič\"label QS:Lel,\"Ο Ιππότης, Θάνατος και Διάβολος\"label QS:Lar,\"الفارس والموت والشيطان\"label QS:Lpt,\"O Cavaleiro, a Morte e o Diabo\"label QS:Lbe,\"Рыцар, смерць і д'ябал\"label QS:Lhy,\"Ասպետ, մահ և սատանա\"label QS:Lzh,\"騎士、死亡和魔鬼\"label QS:Lda,\"Ridder, Døden og Djævelen\"label QS:Lro,\"Cavalerul, Moartea și Diavolul\"label QS:Lja,\"騎士と死と悪魔\"label QS:Lpt-br,\"O Cavaleiro, a Morte e o Diabo\"label QS:Lhe,\"אביר, מוות והשטן\"label QS:Lsv,\"Riddaren, döden och djävulen\"label QS:Lpl,\"Rycerz, Śmierć i diabeł\"label QS:Luk,\"Лицар, смерть і диявол\"label QS:Lnl,\"Ridder, Dood en Duivel\"label QS:Lca,\"El cavaller, la mort i el dimoni\"label QS:Lit,\"Il cavaliere, la morte e il diavolo\"label QS:Len,\"Knight, Death, and the Devil\"label QS:Leo,\"Kavaliro, Morto kaj Diablo\"label QS:Lru,\"Рыцарь, смерть и дьявол\"",
+      "credit": "Albrecht Dürer",
+      "license": "CC0",
+      "api": "wikimedia",
+      "query": "Albrecht Durer engraving knight",
+      "generated": false,
+      "note": "Durer engraving: dense dark crosshatching & chiseled linework",
+      "w": 1280,
+      "h": 1659,
+      "sha1": "9891da8ed32d33a6533e82756cd9e733c335b872"
+    }
+  ],
+  "pros": [
+    "ultra-clear combat telegraphs",
+    "unmistakable identity"
+  ],
+  "cons": [
+    "can feel austere if shop warmth is not protected"
+  ],
+  "dropped": [
+    {
+      "file": "wikimedia-ab49b43e.jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/Albrecht_D%C3%BCrer%2C_Knight%2C_Death_and_Devil%2C_1513%2C_NGA_598.jpg/1280px-Albrecht_D%C3%BCrer%2C_Knight%2C_Death_and_Devil%2C_1513%2C_NGA_598.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "sha1": "ab49b43e97138781135e2ab1585936de31c9e0ec"
+    },
+    {
+      "file": "steam-33d25f3a.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1123770/ss_855348f3239b58910b8e8a26be36f37e17dd82b3.1920x1080.jpg?t=1727864458",
+      "sha1": "33d25f3af0cdf7bdb99c629551bab46e6f4a4f41"
+    }
+  ]
+}

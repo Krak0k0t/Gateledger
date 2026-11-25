@@ -1,0 +1,163 @@
+{
+  "title": "Gateledger — Вариации стиля (Раунд 2)",
+  "subtitle": "Выбрано: Layered Paper & Diorama Theatre — 3 направления по палитре, свету и детализации",
+  "question": "Выберите вариант для фиксации (или напишите микс: например, лавка из 1-го + данжи из 2-го или 3-го).",
+  "mode": "single",
+  "options": [
+    {
+      "id": "paper-warm-guild",
+      "title": "1. Крафт, орех и янтарный свет (Warm Craft & Brass)",
+      "text": "Ось: тёплая палитра + камерный свет свечей/фонарей. Стены лавки как листы крафт-пергамента, пол из тёмного ореха, тёплые лужи янтарного света, мягкий виньет.",
+      "palette": [
+        "#e8d9be",
+        "#3a2920",
+        "#e8a33d",
+        "#8b5e3c",
+        "#a855f7",
+        "#d94343"
+      ],
+      "tags": [
+        "3D",
+        "paper-craft",
+        "warm-daylight",
+        "candlelit"
+      ],
+      "pros": [
+        "уютная лавка как в Recettear",
+        "тёплое дерево и бумага отлично читаются"
+      ],
+      "cons": [
+        "ночному данжу нужен холодный контраст, иначе сольётся с лавкой"
+      ],
+      "media": [
+        {
+          "src": "../../refs/paper-warm-guild/gen-c1211c50.jpg",
+          "caption": "concept: layered parchment walls, oak floor, brass lanterns & round token bases",
+          "source": "",
+          "credit": "image generation",
+          "license": "generated for the project",
+          "generated": true
+        },
+        {
+          "src": "../../refs/paper-warm-guild/local-57771dd3.jpg",
+          "caption": "real ref (Inscryption): warm wood table & moody candle pools",
+          "source": "",
+          "credit": "",
+          "license": "",
+          "generated": false
+        },
+        {
+          "src": "../../refs/paper-warm-guild/local-f107352b.jpg",
+          "caption": "real ref (Inscryption): tactile parchment & high-contrast ink props",
+          "source": "",
+          "credit": "",
+          "license": "",
+          "generated": false
+        }
+      ]
+    },
+    {
+      "id": "paper-spotlight-ink",
+      "title": "2. Театр теней: прожектор и чернила (Spotlight & Midnight Ink)",
+      "text": "Ось: драматичный свет прожектора + глубокий чернильный фон. Вырезанные картонные арки, яркий конус света над ареной/прилавком, жёсткие тени и чистое свечение проклятий/угроз.",
+      "palette": [
+        "#111624",
+        "#2b3347",
+        "#f2c166",
+        "#78685a",
+        "#a855f7",
+        "#e63946"
+      ],
+      "tags": [
+        "3D",
+        "dramatic-spotlight",
+        "dark-ink",
+        "high-contrast"
+      ],
+      "pros": [
+        "максимальная читаемость телеграфов в бою и напряжения от мародёра"
+      ],
+      "cons": [
+        "может казаться мрачноватым для дневной торговли, если не добавлять тёплый пол"
+      ],
+      "media": [
+        {
+          "src": "../../refs/paper-spotlight-ink/gen-79354ee0.jpg",
+          "caption": "concept: cardboard stage arches, spotlight cone, crimson ring telegraph & violet curse",
+          "source": "",
+          "credit": "image generation",
+          "license": "generated for the project",
+          "generated": true
+        },
+        {
+          "src": "../../refs/paper-spotlight-ink/local-c8c721fd.jpg",
+          "caption": "real ref (Inscryption): focused stage pool separating play area from dark void",
+          "source": "",
+          "credit": "",
+          "license": "",
+          "generated": false
+        },
+        {
+          "src": "../../refs/paper-spotlight-ink/local-43ec804a.jpg",
+          "caption": "real ref (Wildermyth): stage-box room edges with crisp dark framing",
+          "source": "",
+          "credit": "",
+          "license": "",
+          "generated": false
+        }
+      ]
+    },
+    {
+      "id": "paper-storybook-vivid",
+      "title": "3. Сказочный картон и кобальт (Storybook Cardstock & Ink)",
+      "text": "Ось: насыщенная сказочная палитра + чёткая тушевая обводка граней. Кобальтовые врата с бирюзовыми рунами, терракотовые крыши, солнечный направленный свет и цветные фишки-подставки.",
+      "palette": [
+        "#233d63",
+        "#efe3cc",
+        "#c86446",
+        "#2ec4b6",
+        "#f4b942",
+        "#e63946"
+      ],
+      "tags": [
+        "3D",
+        "vivid-cardstock",
+        "inked-edges",
+        "storybook"
+      ],
+      "pros": [
+        "живой город днём и контрастные сине-бирюзовые Врата ночью",
+        "сразу цепляет взгляд"
+      ],
+      "cons": [
+        "нужно ограничивать плотность деталей на полу под врагами"
+      ],
+      "media": [
+        {
+          "src": "../../refs/paper-storybook-vivid/gen-18d4d271.jpg",
+          "caption": "concept: cobalt rune gate, terracotta roofs, crisp ink-lined cardstock & token bases",
+          "source": "",
+          "credit": "image generation",
+          "license": "generated for the project",
+          "generated": true
+        },
+        {
+          "src": "../../refs/paper-storybook-vivid/local-2eb1bd5d.jpg",
+          "caption": "real ref (Wildermyth): colorful layered cutouts & red threat outlines",
+          "source": "",
+          "credit": "",
+          "license": "",
+          "generated": false
+        },
+        {
+          "src": "../../refs/paper-storybook-vivid/local-a865d79c.jpg",
+          "caption": "real ref (For The King): crisp stylized low-poly miniatures & bright readability",
+          "source": "",
+          "credit": "",
+          "license": "",
+          "generated": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "title": "1. Крафт, орех и янтарный свет (Warm Craft & Brass)",
+  "text": "Ось: тёплая палитра + камерный свет свечей/фонарей. Стены лавки как листы крафт-пергамента, пол из тёмного ореха, тёплые лужи янтарного света, мягкий виньет.",
+  "palette": [
+    "#e8d9be",
+    "#3a2920",
+    "#e8a33d",
+    "#8b5e3c",
+    "#a855f7",
+    "#d94343"
+  ],
+  "tags": [
+    "3D",
+    "paper-craft",
+    "warm-daylight",
+    "candlelit"
+  ],
+  "items": [
+    {
+      "file": "gen-c1211c50.jpg",
+      "url": "",
+      "page": "",
+      "title": "paper_warm_guild_1794694783922",
+      "credit": "image generation",
+      "license": "generated for the project",
+      "api": "generated",
+      "query": "",
+      "generated": true,
+      "note": "concept: layered parchment walls, oak floor, brass lanterns & round token bases",
+      "w": 1376,
+      "h": 768,
+      "sha1": "c1211c50ff2aecc0f8e2f1ca1e5d6430cd259d5d",
+      "prompt": "layered paper & wood tabletop shop diorama"
+    },
+    {
+      "file": "local-57771dd3.jpg",
+      "url": "",
+      "page": "",
+      "title": "steam-57771dd3",
+      "credit": "",
+      "license": "",
+      "api": "local",
+      "query": "",
+      "generated": false,
+      "note": "real ref (Inscryption): warm wood table & moody candle pools",
+      "w": 1920,
+      "h": 1079,
+      "sha1": "57771dd387273ff0f2750383a92116e345d07472"
+    },
+    {
+      "file": "local-f107352b.jpg",
+      "url": "",
+      "page": "",
+      "title": "steam-f107352b",
+      "credit": "",
+      "license": "",
+      "api": "local",
+      "query": "",
+      "generated": false,
+      "note": "real ref (Inscryption): tactile parchment & high-contrast ink props",
+      "w": 1920,
+      "h": 1079,
+      "sha1": "f107352b1270abd75c33f5fba341a78d14180cea"
+    }
+  ],
+  "pros": [
+    "уютная лавка как в Recettear",
+    "тёплое дерево и бумага отлично читаются"
+  ],
+  "cons": [
+    "ночному данжу нужен холодный контраст, иначе сольётся с лавкой"
+  ]
+}

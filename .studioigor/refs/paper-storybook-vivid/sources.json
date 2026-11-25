@@ -1,0 +1,73 @@
+{
+  "title": "3. Сказочный картон и кобальт (Storybook Cardstock & Ink)",
+  "text": "Ось: насыщенная сказочная палитра + чёткая тушевая обводка граней. Кобальтовые врата с бирюзовыми рунами, терракотовые крыши, солнечный направленный свет и цветные фишки-подставки.",
+  "palette": [
+    "#233d63",
+    "#efe3cc",
+    "#c86446",
+    "#2ec4b6",
+    "#f4b942",
+    "#e63946"
+  ],
+  "tags": [
+    "3D",
+    "vivid-cardstock",
+    "inked-edges",
+    "storybook"
+  ],
+  "items": [
+    {
+      "file": "gen-18d4d271.jpg",
+      "url": "",
+      "page": "",
+      "title": "paper_storybook_vivid_1794694786540",
+      "credit": "image generation",
+      "license": "generated for the project",
+      "api": "generated",
+      "query": "",
+      "generated": true,
+      "note": "concept: cobalt rune gate, terracotta roofs, crisp ink-lined cardstock & token bases",
+      "w": 1376,
+      "h": 768,
+      "sha1": "18d4d271da1753422ece042ea74f40e26e1b86b9",
+      "prompt": "vibrant layered cardstock town gate & slime telegraph"
+    },
+    {
+      "file": "local-2eb1bd5d.jpg",
+      "url": "",
+      "page": "",
+      "title": "steam-2eb1bd5d",
+      "credit": "",
+      "license": "",
+      "api": "local",
+      "query": "",
+      "generated": false,
+      "note": "real ref (Wildermyth): colorful layered cutouts & red threat outlines",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "2eb1bd5d869c76003b43f40f5e9765ab32141ffd"
+    },
+    {
+      "file": "local-a865d79c.jpg",
+      "url": "",
+      "page": "",
+      "title": "steam-a865d79c",
+      "credit": "",
+      "license": "",
+      "api": "local",
+      "query": "",
+      "generated": false,
+      "note": "real ref (For The King): crisp stylized low-poly miniatures & bright readability",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "a865d79cae87cfd5dc5bb4664aee5ed3b949d698"
+    }
+  ],
+  "pros": [
+    "живой город днём и контрастные сине-бирюзовые Врата ночью",
+    "сразу цепляет взгляд"
+  ],
+  "cons": [
+    "нужно ограничивать плотность деталей на полу под врагами"
+  ]
+}

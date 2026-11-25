@@ -1,0 +1,167 @@
+{
+  "title": "Layered Paper & Diorama Theatre",
+  "text": "Rule: rooms look like a handcrafted miniature stage box with layered cut edges, crisp directional spotlighting, and miniature-base tokens under actors. Mood: tactile tabletop fairy tale. Shape: clean layered silhouettes, thick beveled edges, zero surface noise. Color: parchment & ochre by day, ink blue by night, ruby threat accent.",
+  "palette": [],
+  "tags": [
+    "3D",
+    "tabletop",
+    "miniature-stage",
+    "top-down"
+  ],
+  "items": [
+    {
+      "file": "steam-a865d79c.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/527230/ss_d837da91acf3aee05bee799ae609ae4e8005254d.1920x1080.jpg?t=1793907567",
+      "page": "https://store.steampowered.com/app/527230/",
+      "title": "For The King — screenshot 1",
+      "credit": "IronOak Games",
+      "license": "© IronOak Games — moodboard only",
+      "api": "steam",
+      "query": "For The King",
+      "generated": false,
+      "note": "faceted low-poly miniature figures & crisp tabletop lighting",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "a865d79cae87cfd5dc5bb4664aee5ed3b949d698"
+    },
+    {
+      "file": "steam-7a9fb2fc.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/527230/ss_7a9fb2fcdc70305d7e32d522cefc145f04cb7c7e.1920x1080.jpg?t=1793907567",
+      "page": "https://store.steampowered.com/app/527230/",
+      "title": "For The King — screenshot 2",
+      "credit": "IronOak Games",
+      "license": "© IronOak Games — moodboard only",
+      "api": "steam",
+      "query": "For The King",
+      "generated": false,
+      "note": "board-piece diorama terrain with clean beveled tile edges",
+      "w": 1920,
+      "h": 1057,
+      "sha1": "7a9fb2fcdc70305d7e32d522cefc145f04cb7c7e"
+    },
+    {
+      "file": "steam-d3886cbc.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/527230/ss_4a134d4b37032fe078d3487dfdab547275327dd5.1920x1080.jpg?t=1793907567",
+      "page": "https://store.steampowered.com/app/527230/",
+      "title": "For The King — screenshot 3",
+      "credit": "IronOak Games",
+      "license": "© IronOak Games — moodboard only",
+      "api": "steam",
+      "query": "For The King",
+      "generated": false,
+      "note": "readable top-down dungeon grid as a physical stage",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "d3886cbcadebccdf827495bc2078b1535ddaaaa4"
+    },
+    {
+      "file": "steam-57771dd3.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1092790/ss_0191a69b0e94a9a7784f5b81e27f06379910645a.1920x1080.jpg?t=1777572925",
+      "page": "https://store.steampowered.com/app/1092790/",
+      "title": "Inscryption — screenshot 1",
+      "credit": "Daniel Mullins Games",
+      "license": "© Daniel Mullins Games — moodboard only",
+      "api": "steam",
+      "query": "Inscryption",
+      "generated": false,
+      "note": "spotlight vignette over wooden table & moody candle shadows",
+      "w": 1920,
+      "h": 1079,
+      "sha1": "57771dd387273ff0f2750383a92116e345d07472"
+    },
+    {
+      "file": "steam-f107352b.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1092790/ss_3b714682e9e0a214df1630a234e9f6764528eece.1920x1080.jpg?t=1777572925",
+      "page": "https://store.steampowered.com/app/1092790/",
+      "title": "Inscryption — screenshot 2",
+      "credit": "Daniel Mullins Games",
+      "license": "© Daniel Mullins Games — moodboard only",
+      "api": "steam",
+      "query": "Inscryption",
+      "generated": false,
+      "note": "tactile card/token props & high-contrast ink stamps",
+      "w": 1920,
+      "h": 1079,
+      "sha1": "f107352b1270abd75c33f5fba341a78d14180cea"
+    },
+    {
+      "file": "steam-c8c721fd.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1092790/ss_7bfe728822807d232398df1cb1a5d64addd3d8fb.1920x1080.jpg?t=1777572925",
+      "page": "https://store.steampowered.com/app/1092790/",
+      "title": "Inscryption — screenshot 3",
+      "credit": "Daniel Mullins Games",
+      "license": "© Daniel Mullins Games — moodboard only",
+      "api": "steam",
+      "query": "Inscryption",
+      "generated": false,
+      "note": "focused theatrical pool of light separating stage from darkness",
+      "w": 1920,
+      "h": 1079,
+      "sha1": "c8c721fd7ee99f7ffa5d25b805f7934fcd936e01"
+    },
+    {
+      "file": "steam-2eb1bd5d.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/763890/ss_3a550445bd69fcd8df3b57227ddac57502407fad.1920x1080.jpg?t=1740520937",
+      "page": "https://store.steampowered.com/app/763890/",
+      "title": "Wildermyth — screenshot 1",
+      "credit": "Worldwalker Games LLC",
+      "license": "© Worldwalker Games LLC — moodboard only",
+      "api": "steam",
+      "query": "Wildermyth",
+      "generated": false,
+      "note": "layered paper diorama walls, cutout silhouettes & red threat outlines",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "2eb1bd5d869c76003b43f40f5e9765ab32141ffd"
+    },
+    {
+      "file": "steam-43ec804a.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/763890/ss_f5a6c358f0ce9366cd5372c2049fda4370085ede.1920x1080.jpg?t=1740520937",
+      "page": "https://store.steampowered.com/app/763890/",
+      "title": "Wildermyth — screenshot 2",
+      "credit": "Worldwalker Games LLC",
+      "license": "© Worldwalker Games LLC — moodboard only",
+      "api": "steam",
+      "query": "Wildermyth",
+      "generated": false,
+      "note": "stage-box room depth with visible layered edges",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "43ec804a6951eac1397cfa0605a0d268d73832ad"
+    },
+    {
+      "file": "steam-e011f1a4.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/763890/ss_13cb73afe38d7d0961360cc7ffe646fec2ab176b.1920x1080.jpg?t=1740520937",
+      "page": "https://store.steampowered.com/app/763890/",
+      "title": "Wildermyth — screenshot 3",
+      "credit": "Worldwalker Games LLC",
+      "license": "© Worldwalker Games LLC — moodboard only",
+      "api": "steam",
+      "query": "Wildermyth",
+      "generated": false,
+      "note": "storybook cutout look with crisp directional key light",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "e011f1a435f9edb8e9122b7289cb5f1597b0a972"
+    }
+  ],
+  "pros": [
+    "very fast WebGL performance",
+    "super readable gameplay scale"
+  ],
+  "cons": [
+    "can feel toy-like unless lighting adds drama"
+  ],
+  "dropped": [
+    {
+      "file": "wikimedia-9e26a387.jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/77/Site_of_Pollock%27s_Toy_Theatre_Shop_-_McGregor_Court%2C_Hoxton_Street%2C_Hackney%2C_London_N1_6LB.jpg/1280px-Site_of_Pollock%27s_Toy_Theatre_Shop_-_McGregor_Court%2C_Hoxton_Street%2C_Hackney%2C_London_N1_6LB.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "sha1": "9e26a387299838505657b74b2fb533e9203c1985"
+    },
+    {
+      "file": "wikimedia-4805e5bd.jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/00/Pollock%27s_Toy_Theatre_Shop_site_-_McGregor_Court%2C_Hoxton_Street%2C_Hackney%2C_London_N1_6LB.jpg/1280px-Pollock%27s_Toy_Theatre_Shop_site_-_McGregor_Court%2C_Hoxton_Street%2C_Hackney%2C_London_N1_6LB.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "sha1": "4805e5bd3934a1026bb84f56f9dffc0b334c3780"
+    }
+  ]
+}

@@ -1,0 +1,340 @@
+{
+  "title": "Gateledger — Выбор стиля (Раунд 1)",
+  "subtitle": "Стилизованное 3D сверху под углом: ночной данж + дневная лавка",
+  "question": "Выберите направление (Choose), отметьте удачные кадры (Like / Not it) и нажмите Send или выберите вариант в чате.",
+  "mode": "single",
+  "options": [
+    {
+      "id": "candlelit-diorama",
+      "title": "Candlelit Diorama & Amber Brass",
+      "text": "Rule: warm honey lantern glow on shop counters by day; cool torchlight cuts indigo darkness by night. Mood: cozy artisan workshop vs eerie flooded vaults. Shape: beveled chests, chunky silhouettes, tabletop diorama clarity. Color: dark walnut & slate base, amber brass secondary, violet = curse, emerald = sweet deal.",
+      "palette": [],
+      "tags": [
+        "3D",
+        "diorama",
+        "warm-vs-cool",
+        "top-down"
+      ],
+      "pros": [
+        "instant readability",
+        "warm shop vs tense dungeon contrast"
+      ],
+      "cons": [
+        "needs disciplined bloom so warm lights do not wash out"
+      ],
+      "media": [
+        {
+          "src": "../../refs/candlelit-diorama/steam-ab8c3e0a.jpg",
+          "caption": "combat readability: bright player silhouette & hit flashes on dark teal stone",
+          "source": "https://store.steampowered.com/app/606150/",
+          "credit": "Digital Sun",
+          "license": "© Digital Sun — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/candlelit-diorama/steam-0c1c3e7c.jpg",
+          "caption": "warm daytime village & dialogue portrait box contrast",
+          "source": "https://store.steampowered.com/app/606150/",
+          "credit": "Digital Sun",
+          "license": "© Digital Sun — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/candlelit-diorama/steam-186e15a0.jpg",
+          "caption": "shop interior layout & readable price/item staging",
+          "source": "https://store.steampowered.com/app/606150/",
+          "credit": "Digital Sun",
+          "license": "© Digital Sun — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/candlelit-diorama/steam-7d51307f.jpg",
+          "caption": "boss telegraph clarity & cool cavern ambient",
+          "source": "https://store.steampowered.com/app/606150/",
+          "credit": "Digital Sun",
+          "license": "© Digital Sun — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/candlelit-diorama/steam-a1b8f5f4.jpg",
+          "caption": "3D angled diorama lighting, beveled cliffs & bounce light",
+          "source": "https://store.steampowered.com/app/553420/",
+          "credit": "TUNIC Team",
+          "license": "© TUNIC Team — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/candlelit-diorama/steam-f47a74e3.jpg",
+          "caption": "warm candle-torch falloff against deep shadow pockets",
+          "source": "https://store.steampowered.com/app/553420/",
+          "credit": "TUNIC Team",
+          "license": "© TUNIC Team — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/candlelit-diorama/steam-08397cb2.jpg",
+          "caption": "parchment ledger UI, warm brass vessels & artisan shop tone",
+          "source": "https://store.steampowered.com/app/1210320/",
+          "credit": "niceplay games",
+          "license": "© niceplay games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/candlelit-diorama/steam-1d128a1a.jpg",
+          "caption": "tactile counter props & apothecary clutter density",
+          "source": "https://store.steampowered.com/app/1210320/",
+          "credit": "niceplay games",
+          "license": "© niceplay games — moodboard only",
+          "generated": false
+        }
+      ]
+    },
+    {
+      "id": "engraved-obsidian",
+      "title": "Gilded Engraving & Obsidian",
+      "text": "Rule: stone and ruins stay near-monochrome matte obsidian with crisp silhouettes; only gold, danger telegraphs, and curses glow with pure pigment. Mood: high-stakes gothic auction house. Shape: chiseled facets, tall gate arches, sharp shadows. Color: charcoal monochrome + leaf gold (value) + crimson (danger).",
+      "palette": [],
+      "tags": [
+        "3D",
+        "high-contrast",
+        "monochrome-plus-gold",
+        "top-down"
+      ],
+      "pros": [
+        "ultra-clear combat telegraphs",
+        "unmistakable identity"
+      ],
+      "cons": [
+        "can feel austere if shop warmth is not protected"
+      ],
+      "media": [
+        {
+          "src": "../../refs/engraved-obsidian/steam-4c11702b.jpg",
+          "caption": "angled 3D stone courtyard, warm braziers vs dark slate hero",
+          "source": "https://store.steampowered.com/app/894020/",
+          "credit": "Acid Nerve",
+          "license": "© Acid Nerve — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/engraved-obsidian/steam-6e7e2e7d.jpg",
+          "caption": "crisp shadow edges & selective glow on interactive gates",
+          "source": "https://store.steampowered.com/app/894020/",
+          "credit": "Acid Nerve",
+          "license": "© Acid Nerve — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/engraved-obsidian/steam-7e5280b7.jpg",
+          "caption": "boss arena silhouettes & high-contrast attack flashes",
+          "source": "https://store.steampowered.com/app/894020/",
+          "credit": "Acid Nerve",
+          "license": "© Acid Nerve — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/engraved-obsidian/steam-4d1eb390.jpg",
+          "caption": "restrained warm-gold accents on desaturated stone architecture",
+          "source": "https://store.steampowered.com/app/894020/",
+          "credit": "Acid Nerve",
+          "license": "© Acid Nerve — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/engraved-obsidian/steam-58a138d5.jpg",
+          "caption": "pure violet curse glow cutting through near-black ink shadows",
+          "source": "https://store.steampowered.com/app/1123770/",
+          "credit": "Passtech Games",
+          "license": "© Passtech Games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/engraved-obsidian/steam-360238bc.jpg",
+          "caption": "torch radius vs shadow danger & sharp comic-ink shadow edges",
+          "source": "https://store.steampowered.com/app/1123770/",
+          "credit": "Passtech Games",
+          "license": "© Passtech Games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/engraved-obsidian/wikimedia-9891da8e.jpg",
+          "caption": "Durer engraving: dense dark crosshatching & chiseled linework",
+          "source": "https://commons.wikimedia.org/wiki/File:Albrecht_D%C3%BCrer,_Knight,_Death_and_Devil,_1513,_NGA_6637.jpg",
+          "credit": "Albrecht Dürer",
+          "license": "CC0",
+          "generated": false
+        }
+      ]
+    },
+    {
+      "id": "painted-porcelain",
+      "title": "Painted Majolica & Azure Bazaar",
+      "text": "Rule: world reads like glazed ceramic tiles and illuminated storybook tapestry — clean color planes, mosaic floor grids doubling as combat spacing cues, zero muddy grey. Mood: sunlit spice bazaar by day, lapis lazuli star vault by night. Shape: ornamental arches, smooth curves, tiled patterns. Color: ivory & terracotta / deep ultramarine + saffron gold.",
+      "palette": [],
+      "tags": [
+        "3D",
+        "stylized-painterly",
+        "mosaic",
+        "top-down"
+      ],
+      "pros": [
+        "vibrant and fresh for the genre",
+        "mosaic tiles aid combat spacing"
+      ],
+      "cons": [
+        "pattern density must stay low under characters"
+      ],
+      "media": [
+        {
+          "src": "../../refs/painted-porcelain/steam-ce5011a3.jpg",
+          "caption": "hand-painted foliage planes & vibrant saturated color blocking",
+          "source": "https://store.steampowered.com/app/887450/",
+          "credit": "LEAP Game Studios",
+          "license": "© LEAP Game Studios — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/painted-porcelain/steam-99b6b750.jpg",
+          "caption": "warm-vs-cool stylized strokes & expressive combat trails",
+          "source": "https://store.steampowered.com/app/887450/",
+          "credit": "LEAP Game Studios",
+          "license": "© LEAP Game Studios — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/painted-porcelain/steam-9b04b832.jpg",
+          "caption": "clean inked outlines, flat ceramic color fields & bright FX",
+          "source": "https://store.steampowered.com/app/1983260/",
+          "credit": "Microbird Games",
+          "license": "© Microbird Games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/painted-porcelain/steam-a81990e6.jpg",
+          "caption": "angled 3D painted terrain with zero muddy grey",
+          "source": "https://store.steampowered.com/app/1983260/",
+          "credit": "Microbird Games",
+          "license": "© Microbird Games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/painted-porcelain/steam-275d0f90.jpg",
+          "caption": "stylized magic circle & clear danger silhouette on bright floor",
+          "source": "https://store.steampowered.com/app/1983260/",
+          "credit": "Microbird Games",
+          "license": "© Microbird Games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/painted-porcelain/wikimedia-32f9f173.jpg",
+          "caption": "Shiraz glazed ceramic arch: saffron gold, ultramarine & ornamental framing",
+          "source": "https://commons.wikimedia.org/wiki/File:A_strange_picture_at_Shiraz_Bazaar.jpg",
+          "credit": "Davide Mauro",
+          "license": "CC BY-SA 4.0",
+          "generated": false
+        },
+        {
+          "src": "../../refs/painted-porcelain/wikimedia-9e64d7fd.jpg",
+          "caption": "flat miniature color planes & decorative foliage rhythm",
+          "source": "https://commons.wikimedia.org/wiki/File:A_tiger_hunt_at_Jhajjar,_Rohtak_District,_Panjab.jpg",
+          "credit": "Khan, Ghulam Ali (maker)",
+          "license": "Public domain",
+          "generated": false
+        }
+      ]
+    },
+    {
+      "id": "paper-theatre",
+      "title": "Layered Paper & Diorama Theatre",
+      "text": "Rule: rooms look like a handcrafted miniature stage box with layered cut edges, crisp directional spotlighting, and miniature-base tokens under actors. Mood: tactile tabletop fairy tale. Shape: clean layered silhouettes, thick beveled edges, zero surface noise. Color: parchment & ochre by day, ink blue by night, ruby threat accent.",
+      "palette": [],
+      "tags": [
+        "3D",
+        "tabletop",
+        "miniature-stage",
+        "top-down"
+      ],
+      "pros": [
+        "very fast WebGL performance",
+        "super readable gameplay scale"
+      ],
+      "cons": [
+        "can feel toy-like unless lighting adds drama"
+      ],
+      "media": [
+        {
+          "src": "../../refs/paper-theatre/steam-a865d79c.jpg",
+          "caption": "faceted low-poly miniature figures & crisp tabletop lighting",
+          "source": "https://store.steampowered.com/app/527230/",
+          "credit": "IronOak Games",
+          "license": "© IronOak Games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/paper-theatre/steam-7a9fb2fc.jpg",
+          "caption": "board-piece diorama terrain with clean beveled tile edges",
+          "source": "https://store.steampowered.com/app/527230/",
+          "credit": "IronOak Games",
+          "license": "© IronOak Games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/paper-theatre/steam-d3886cbc.jpg",
+          "caption": "readable top-down dungeon grid as a physical stage",
+          "source": "https://store.steampowered.com/app/527230/",
+          "credit": "IronOak Games",
+          "license": "© IronOak Games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/paper-theatre/steam-57771dd3.jpg",
+          "caption": "spotlight vignette over wooden table & moody candle shadows",
+          "source": "https://store.steampowered.com/app/1092790/",
+          "credit": "Daniel Mullins Games",
+          "license": "© Daniel Mullins Games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/paper-theatre/steam-f107352b.jpg",
+          "caption": "tactile card/token props & high-contrast ink stamps",
+          "source": "https://store.steampowered.com/app/1092790/",
+          "credit": "Daniel Mullins Games",
+          "license": "© Daniel Mullins Games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/paper-theatre/steam-c8c721fd.jpg",
+          "caption": "focused theatrical pool of light separating stage from darkness",
+          "source": "https://store.steampowered.com/app/1092790/",
+          "credit": "Daniel Mullins Games",
+          "license": "© Daniel Mullins Games — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/paper-theatre/steam-2eb1bd5d.jpg",
+          "caption": "layered paper diorama walls, cutout silhouettes & red threat outlines",
+          "source": "https://store.steampowered.com/app/763890/",
+          "credit": "Worldwalker Games LLC",
+          "license": "© Worldwalker Games LLC — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/paper-theatre/steam-43ec804a.jpg",
+          "caption": "stage-box room depth with visible layered edges",
+          "source": "https://store.steampowered.com/app/763890/",
+          "credit": "Worldwalker Games LLC",
+          "license": "© Worldwalker Games LLC — moodboard only",
+          "generated": false
+        },
+        {
+          "src": "../../refs/paper-theatre/steam-e011f1a4.jpg",
+          "caption": "storybook cutout look with crisp directional key light",
+          "source": "https://store.steampowered.com/app/763890/",
+          "credit": "Worldwalker Games LLC",
+          "license": "© Worldwalker Games LLC — moodboard only",
+          "generated": false
+        }
+      ]
+    }
+  ]
+}

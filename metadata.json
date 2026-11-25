@@ -1,0 +1,8 @@
+{
+  "name": "Copilot Gateledger",
+  "description": "Stylized 3D action-roguelike dungeon crawler and item shop haggling game.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

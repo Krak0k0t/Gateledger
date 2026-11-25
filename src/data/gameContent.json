@@ -1,0 +1,118 @@
+{
+  "difficulties": {
+    "cozy": {
+      "id": "cozy",
+      "enemyHpMult": 0.75,
+      "enemyDmgMult": 0.65,
+      "telegraphMult": 1.35,
+      "debtMult": 0.75,
+      "patienceBonus": 1,
+      "marauderTime": 140
+    },
+    "standard": {
+      "id": "standard",
+      "enemyHpMult": 1.0,
+      "enemyDmgMult": 1.0,
+      "telegraphMult": 1.0,
+      "debtMult": 1.0,
+      "patienceBonus": 0,
+      "marauderTime": 100
+    },
+    "veteran": {
+      "id": "veteran",
+      "enemyHpMult": 1.35,
+      "enemyDmgMult": 1.4,
+      "telegraphMult": 0.82,
+      "debtMult": 1.25,
+      "patienceBonus": 0,
+      "marauderTime": 75
+    }
+  },
+  "weapons": [
+    {
+      "id": "sword",
+      "nameKey": "wpn_sword",
+      "descKey": "wpn_sword_desc",
+      "damage": 24,
+      "range": 2.45,
+      "arcDeg": 135,
+      "cooldown": 0.32,
+      "specialDamage": 58,
+      "specialRange": 3.1,
+      "specialCooldown": 3.4,
+      "color": "#2EC4B6",
+      "unlockCost": 0
+    },
+    {
+      "id": "spear",
+      "nameKey": "wpn_spear",
+      "descKey": "wpn_spear_desc",
+      "damage": 22,
+      "range": 3.45,
+      "arcDeg": 68,
+      "cooldown": 0.28,
+      "specialDamage": 64,
+      "specialRange": 4.4,
+      "specialCooldown": 3.2,
+      "color": "#F4B942",
+      "unlockCost": 280
+    },
+    {
+      "id": "hammer",
+      "nameKey": "wpn_hammer",
+      "descKey": "wpn_hammer_desc",
+      "damage": 38,
+      "range": 2.55,
+      "arcDeg": 170,
+      "cooldown": 0.48,
+      "specialDamage": 88,
+      "specialRange": 3.6,
+      "specialCooldown": 4.2,
+      "color": "#C86446",
+      "unlockCost": 420
+    },
+    {
+      "id": "twinblades",
+      "nameKey": "wpn_twinblades",
+      "descKey": "wpn_twinblades_desc",
+      "damage": 19,
+      "range": 2.3,
+      "arcDeg": 115,
+      "cooldown": 0.21,
+      "specialDamage": 66,
+      "specialRange": 3.4,
+      "specialCooldown": 2.8,
+      "color": "#C084FC",
+      "unlockCost": 340
+    }
+  ],
+  "relics": [
+    { "id": "whisper_seal", "era": "astral", "baseValue": 55, "rarity": 1, "color": "#2EC4B6", "curse": "none" },
+    { "id": "cobalt_shard", "era": "astral", "baseValue": 65, "rarity": 1, "color": "#233D63", "curse": "none" },
+    { "id": "brass_astrolabe", "era": "astral", "baseValue": 110, "rarity": 2, "color": "#F4B942", "curse": "gilded" },
+    { "id": "star_prism", "era": "astral", "baseValue": 145, "rarity": 3, "color": "#2EC4B6", "curse": "vault" },
+    { "id": "amber_chalice", "era": "hearth", "baseValue": 72, "rarity": 1, "color": "#C86446", "curse": "none" },
+    { "id": "guild_signet", "era": "hearth", "baseValue": 95, "rarity": 2, "color": "#F4B942", "curse": "none" },
+    { "id": "terracotta_idol", "era": "hearth", "baseValue": 120, "rarity": 2, "color": "#C86446", "curse": "pyre" },
+    { "id": "ivory_quill", "era": "hearth", "baseValue": 135, "rarity": 2, "color": "#EFE3CC", "curse": "cleanse" },
+    { "id": "royal_compass", "era": "hearth", "baseValue": 150, "rarity": 3, "color": "#38BDF8", "curse": "cleanse" },
+    { "id": "runed_fang", "era": "abyss", "baseValue": 88, "rarity": 2, "color": "#A855F7", "curse": "lock" },
+    { "id": "void_shard", "era": "abyss", "baseValue": 115, "rarity": 2, "color": "#7C3AED", "curse": "void" },
+    { "id": "obsidian_crown", "era": "abyss", "baseValue": 210, "rarity": 3, "color": "#233D63", "curse": "pyre" },
+    { "id": "moon_mirror", "era": "abyss", "baseValue": 175, "rarity": 3, "color": "#2EC4B6", "curse": "gilded" },
+    { "id": "sun_core", "era": "forge", "baseValue": 160, "rarity": 3, "color": "#F4B942", "curse": "vault" },
+    { "id": "ember_ingot", "era": "forge", "baseValue": 82, "rarity": 1, "color": "#C86446", "curse": "none" },
+    { "id": "warden_crest", "era": "forge", "baseValue": 250, "rarity": 3, "color": "#F4B942", "curse": "cleanse" }
+  ],
+  "weeks": [
+    { "week": 1, "debtTarget": 320, "daysPerWeek": 3, "eraTrend": "astral", "biomeNameKey": "biome_whisper" },
+    { "week": 2, "debtTarget": 580, "daysPerWeek": 3, "eraTrend": "hearth", "biomeNameKey": "biome_hearth" },
+    { "week": 3, "debtTarget": 880, "daysPerWeek": 3, "eraTrend": "abyss", "biomeNameKey": "biome_abyss" },
+    { "week": 4, "debtTarget": 1250, "daysPerWeek": 4, "eraTrend": "forge", "biomeNameKey": "biome_forge" }
+  ],
+  "upgrades": [
+    { "id": "display_tier", "maxLevel": 3, "costs": [180, 340, 560], "effect": "+1 pedestal & shop appeal" },
+    { "id": "forge_temper", "maxLevel": 3, "costs": [160, 320, 520], "effect": "+25% weapon skill & special focus" },
+    { "id": "potion_belt", "maxLevel": 3, "costs": [140, 260, 420], "effect": "+1 max HP & +1 potion charge" }
+  ]
+}

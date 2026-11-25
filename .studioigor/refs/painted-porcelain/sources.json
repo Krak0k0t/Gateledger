@@ -1,0 +1,125 @@
+{
+  "title": "Painted Majolica & Azure Bazaar",
+  "text": "Rule: world reads like glazed ceramic tiles and illuminated storybook tapestry — clean color planes, mosaic floor grids doubling as combat spacing cues, zero muddy grey. Mood: sunlit spice bazaar by day, lapis lazuli star vault by night. Shape: ornamental arches, smooth curves, tiled patterns. Color: ivory & terracotta / deep ultramarine + saffron gold.",
+  "palette": [],
+  "tags": [
+    "3D",
+    "stylized-painterly",
+    "mosaic",
+    "top-down"
+  ],
+  "items": [
+    {
+      "file": "steam-ce5011a3.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/887450/ss_69587fcde5983e259d2f3786b6e33a5230c54f8f.1920x1080.jpg?t=1721399704",
+      "page": "https://store.steampowered.com/app/887450/",
+      "title": "Tunche — screenshot 1",
+      "credit": "LEAP Game Studios",
+      "license": "© LEAP Game Studios — moodboard only",
+      "api": "steam",
+      "query": "Tunche",
+      "generated": false,
+      "note": "hand-painted foliage planes & vibrant saturated color blocking",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "ce5011a35277130aa3a06f75cfe896289002f9e8"
+    },
+    {
+      "file": "steam-99b6b750.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/887450/ss_6c01af784b7dd1b11cf8461e2d5320f073450776.1920x1080.jpg?t=1721399704",
+      "page": "https://store.steampowered.com/app/887450/",
+      "title": "Tunche — screenshot 2",
+      "credit": "LEAP Game Studios",
+      "license": "© LEAP Game Studios — moodboard only",
+      "api": "steam",
+      "query": "Tunche",
+      "generated": false,
+      "note": "warm-vs-cool stylized strokes & expressive combat trails",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "99b6b750f4406cebfa2955611697ba921a9864dd"
+    },
+    {
+      "file": "steam-9b04b832.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1983260/ss_d3fbaf7e56e8d8766d49314acf146df4d1c646ee.1920x1080.jpg?t=1771577094",
+      "page": "https://store.steampowered.com/app/1983260/",
+      "title": "Dungeons of Hinterberg — screenshot 1",
+      "credit": "Microbird Games",
+      "license": "© Microbird Games — moodboard only",
+      "api": "steam",
+      "query": "Dungeons of Hinterberg",
+      "generated": false,
+      "note": "clean inked outlines, flat ceramic color fields & bright FX",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "9b04b8321a6d6409aa54390daae37ac0af7a159c"
+    },
+    {
+      "file": "steam-a81990e6.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1983260/ss_6fa82b60ca0c37259dcd6b89a3b3d6e6edd9736a.1920x1080.jpg?t=1771577094",
+      "page": "https://store.steampowered.com/app/1983260/",
+      "title": "Dungeons of Hinterberg — screenshot 2",
+      "credit": "Microbird Games",
+      "license": "© Microbird Games — moodboard only",
+      "api": "steam",
+      "query": "Dungeons of Hinterberg",
+      "generated": false,
+      "note": "angled 3D painted terrain with zero muddy grey",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "a81990e647fe20ab296cf10df0d501c2c6fb83cb"
+    },
+    {
+      "file": "steam-275d0f90.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1983260/ss_f141ae787fabbe1214b4db8524c2580cbed3e19a.1920x1080.jpg?t=1771577094",
+      "page": "https://store.steampowered.com/app/1983260/",
+      "title": "Dungeons of Hinterberg — screenshot 3",
+      "credit": "Microbird Games",
+      "license": "© Microbird Games — moodboard only",
+      "api": "steam",
+      "query": "Dungeons of Hinterberg",
+      "generated": false,
+      "note": "stylized magic circle & clear danger silhouette on bright floor",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "275d0f9047091294c706ca9d075cc134c67b3132"
+    },
+    {
+      "file": "wikimedia-32f9f173.jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/A_strange_picture_at_Shiraz_Bazaar.jpg/1280px-A_strange_picture_at_Shiraz_Bazaar.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:A_strange_picture_at_Shiraz_Bazaar.jpg",
+      "title": "A strange picture at Shiraz Bazaar",
+      "credit": "Davide Mauro",
+      "license": "CC BY-SA 4.0",
+      "api": "wikimedia",
+      "query": "Persian miniature bazaar",
+      "generated": false,
+      "note": "Shiraz glazed ceramic arch: saffron gold, ultramarine & ornamental framing",
+      "w": 1280,
+      "h": 1920,
+      "sha1": "32f9f17328ce13558e103c531234f4e73094bf5d"
+    },
+    {
+      "file": "wikimedia-9e64d7fd.jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4e/A_tiger_hunt_at_Jhajjar%2C_Rohtak_District%2C_Panjab.jpg/1280px-A_tiger_hunt_at_Jhajjar%2C_Rohtak_District%2C_Panjab.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:A_tiger_hunt_at_Jhajjar,_Rohtak_District,_Panjab.jpg",
+      "title": "A tiger hunt at Jhajjar, Rohtak District, Panjab",
+      "credit": "Khan, Ghulam Ali (maker)",
+      "license": "Public domain",
+      "api": "wikimedia",
+      "query": "Persian miniature bazaar",
+      "generated": false,
+      "note": "flat miniature color planes & decorative foliage rhythm",
+      "w": 1280,
+      "h": 1002,
+      "sha1": "9e64d7fdfbc04a3ac3bd5df65c037c70a4776a07"
+    }
+  ],
+  "pros": [
+    "vibrant and fresh for the genre",
+    "mosaic tiles aid combat spacing"
+  ],
+  "cons": [
+    "pattern density must stay low under characters"
+  ]
+}

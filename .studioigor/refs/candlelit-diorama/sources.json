@@ -1,0 +1,147 @@
+{
+  "title": "Candlelit Diorama & Amber Brass",
+  "text": "Rule: warm honey lantern glow on shop counters by day; cool torchlight cuts indigo darkness by night. Mood: cozy artisan workshop vs eerie flooded vaults. Shape: beveled chests, chunky silhouettes, tabletop diorama clarity. Color: dark walnut & slate base, amber brass secondary, violet = curse, emerald = sweet deal.",
+  "palette": [],
+  "tags": [
+    "3D",
+    "diorama",
+    "warm-vs-cool",
+    "top-down"
+  ],
+  "items": [
+    {
+      "file": "steam-ab8c3e0a.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/606150/ss_12301c80d516d688eb1d18e214df8459679e8e60.1920x1080.jpg?t=1794238333",
+      "page": "https://store.steampowered.com/app/606150/",
+      "title": "Moonlighter — screenshot 1",
+      "credit": "Digital Sun",
+      "license": "© Digital Sun — moodboard only",
+      "api": "steam",
+      "query": "Moonlighter",
+      "generated": false,
+      "note": "combat readability: bright player silhouette & hit flashes on dark teal stone",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "ab8c3e0a1efd26fb0d3d672c19141a5f94237605"
+    },
+    {
+      "file": "steam-0c1c3e7c.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/606150/ss_af36aa1ca2e534a999938cff0eb04409668f5b10.1920x1080.jpg?t=1794238333",
+      "page": "https://store.steampowered.com/app/606150/",
+      "title": "Moonlighter — screenshot 2",
+      "credit": "Digital Sun",
+      "license": "© Digital Sun — moodboard only",
+      "api": "steam",
+      "query": "Moonlighter",
+      "generated": false,
+      "note": "warm daytime village & dialogue portrait box contrast",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "0c1c3e7cabf5d698669efd980f6638cf0fbd6435"
+    },
+    {
+      "file": "steam-186e15a0.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/606150/ss_c7c33eb041627f7a5fdbdefb0e41269178faf372.1920x1080.jpg?t=1794238333",
+      "page": "https://store.steampowered.com/app/606150/",
+      "title": "Moonlighter — screenshot 3",
+      "credit": "Digital Sun",
+      "license": "© Digital Sun — moodboard only",
+      "api": "steam",
+      "query": "Moonlighter",
+      "generated": false,
+      "note": "shop interior layout & readable price/item staging",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "186e15a012e06067b3b7d492823ec532255e9d25"
+    },
+    {
+      "file": "steam-7d51307f.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/606150/ss_c0221de85444acca32ce4441b11a78105d8a9928.1920x1080.jpg?t=1794238333",
+      "page": "https://store.steampowered.com/app/606150/",
+      "title": "Moonlighter — screenshot 4",
+      "credit": "Digital Sun",
+      "license": "© Digital Sun — moodboard only",
+      "api": "steam",
+      "query": "Moonlighter",
+      "generated": false,
+      "note": "boss telegraph clarity & cool cavern ambient",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "7d51307f0154934da1b2cdf9466992a98e14246c"
+    },
+    {
+      "file": "steam-a1b8f5f4.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/553420/ss_9c0184ba83022786f74f4a70ebae5c47d2a3c35c.1920x1080.jpg?t=1783359656",
+      "page": "https://store.steampowered.com/app/553420/",
+      "title": "TUNIC — screenshot 1",
+      "credit": "TUNIC Team",
+      "license": "© TUNIC Team — moodboard only",
+      "api": "steam",
+      "query": "TUNIC",
+      "generated": false,
+      "note": "3D angled diorama lighting, beveled cliffs & bounce light",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "a1b8f5f4d805b2fcbc8934bd53e1492ff81e7d28"
+    },
+    {
+      "file": "steam-f47a74e3.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/553420/ss_5fc49d3c5fa34b0d0e6b6a5621f9062bec7ac4d7.1920x1080.jpg?t=1783359656",
+      "page": "https://store.steampowered.com/app/553420/",
+      "title": "TUNIC — screenshot 2",
+      "credit": "TUNIC Team",
+      "license": "© TUNIC Team — moodboard only",
+      "api": "steam",
+      "query": "TUNIC",
+      "generated": false,
+      "note": "warm candle-torch falloff against deep shadow pockets",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "f47a74e32d71c8ccdae1b1581813dadf89ec4d29"
+    },
+    {
+      "file": "steam-08397cb2.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1210320/ss_a5197ad5bb35e9899c9e751820cdb9dbc0ceb308.1920x1080.jpg?t=1793194728",
+      "page": "https://store.steampowered.com/app/1210320/",
+      "title": "Potion Craft: Alchemist Simulator — screenshot 1",
+      "credit": "niceplay games",
+      "license": "© niceplay games — moodboard only",
+      "api": "steam",
+      "query": "Potion Craft: Alchemist Simulator",
+      "generated": false,
+      "note": "parchment ledger UI, warm brass vessels & artisan shop tone",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "08397cb2a4c0c264f73fe1c25f262a21973bd0a4"
+    },
+    {
+      "file": "steam-1d128a1a.jpg",
+      "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1210320/ss_594f4f435a27c625e0f5c8d3603883c9e293b967.1920x1080.jpg?t=1793194728",
+      "page": "https://store.steampowered.com/app/1210320/",
+      "title": "Potion Craft: Alchemist Simulator — screenshot 2",
+      "credit": "niceplay games",
+      "license": "© niceplay games — moodboard only",
+      "api": "steam",
+      "query": "Potion Craft: Alchemist Simulator",
+      "generated": false,
+      "note": "tactile counter props & apothecary clutter density",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "1d128a1a90459d9474b16160bedd742ae702d633"
+    }
+  ],
+  "pros": [
+    "instant readability",
+    "warm shop vs tense dungeon contrast"
+  ],
+  "cons": [
+    "needs disciplined bloom so warm lights do not wash out"
+  ],
+  "dropped": [
+    {
+      "file": "wikimedia-a2b009f2.jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/NL6-R-18_Rijksmuseum_Cabinet_with_Apothecary_collection_3D.jpg/1280px-NL6-R-18_Rijksmuseum_Cabinet_with_Apothecary_collection_3D.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "sha1": "a2b009f26173a5971abd090ed82734e00e2e18e6"
+    }
+  ]
+}

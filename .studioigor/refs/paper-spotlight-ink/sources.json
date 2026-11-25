@@ -1,0 +1,72 @@
+{
+  "title": "2. Театр теней: прожектор и чернила (Spotlight & Midnight Ink)",
+  "text": "Ось: драматичный свет прожектора + глубокий чернильный фон. Вырезанные картонные арки, яркий конус света над ареной/прилавком, жёсткие тени и чистое свечение проклятий/угроз.",
+  "palette": [
+    "#111624",
+    "#2b3347",
+    "#f2c166",
+    "#78685a",
+    "#a855f7",
+    "#e63946"
+  ],
+  "tags": [
+    "3D",
+    "dramatic-spotlight",
+    "dark-ink",
+    "high-contrast"
+  ],
+  "items": [
+    {
+      "file": "gen-79354ee0.jpg",
+      "url": "",
+      "page": "",
+      "title": "paper_spotlight_ink_1794694785448",
+      "credit": "image generation",
+      "license": "generated for the project",
+      "api": "generated",
+      "query": "",
+      "generated": true,
+      "note": "concept: cardboard stage arches, spotlight cone, crimson ring telegraph & violet curse",
+      "w": 1376,
+      "h": 768,
+      "sha1": "79354ee013ea67bfb2e5f947064b5dc1eeb08045",
+      "prompt": "cardboard dungeon stage box with warm spotlight & crimson telegraph"
+    },
+    {
+      "file": "local-c8c721fd.jpg",
+      "url": "",
+      "page": "",
+      "title": "steam-c8c721fd",
+      "credit": "",
+      "license": "",
+      "api": "local",
+      "query": "",
+      "generated": false,
+      "note": "real ref (Inscryption): focused stage pool separating play area from dark void",
+      "w": 1920,
+      "h": 1079,
+      "sha1": "c8c721fd7ee99f7ffa5d25b805f7934fcd936e01"
+    },
+    {
+      "file": "local-43ec804a.jpg",
+      "url": "",
+      "page": "",
+      "title": "steam-43ec804a",
+      "credit": "",
+      "license": "",
+      "api": "local",
+      "query": "",
+      "generated": false,
+      "note": "real ref (Wildermyth): stage-box room edges with crisp dark framing",
+      "w": 1920,
+      "h": 1080,
+      "sha1": "43ec804a6951eac1397cfa0605a0d268d73832ad"
+    }
+  ],
+  "pros": [
+    "максимальная читаемость телеграфов в бою и напряжения от мародёра"
+  ],
+  "cons": [
+    "может казаться мрачноватым для дневной торговли, если не добавлять тёплый пол"
+  ]
+}
