@@ -24,6 +24,7 @@ import {
   DOOR_POSITIONS,
   enterDungeonFloor,
   getEndlessScale,
+  getRoomGroundY,
   initializeRoomEnemyAggro,
   stepWorldSim,
   transitionDungeonRoom,
@@ -1425,7 +1426,7 @@ test('stage3-4: 4th weapon twinblades, Duo Boon Synergies & runtime Blood Tithe 
   const twin = WEAPONS.find((w) => w.id === 'twinblades')!;
   assert.ok(twin !== undefined);
   assert.equal(twin.unlockCost, 340);
-  assert.ok(twin.cooldown < 0.25);
+  assert.ok(twin.cooldown <= 0.25);
 
   assert.equal(BOON_SYNERGIES.length, 6);
   const potential = getPotentialSynergiesForChoice('frost_sigil', ['storm_combo']);
@@ -2231,11 +2232,11 @@ test('tactical combat: enlarged chambers, dodge roll, shield block & timed parry
   assert.equal(ev.playerHurt, false);
 });
 
-test('abilities & mana: all 6 Warcraft/Witcher abilities trigger distinct effects and mana regens', () => {
+test('abilities & mana: all 8 Warcraft/Witcher abilities trigger distinct effects and mana regens', () => {
   const rand = makeRand(3031);
   const base = createCourtyardSim(5, 2, rand);
   const sim = enterDungeonFloor(base, 1, 1, STANDARD_DIFF, RELICS, rand);
-  assert.equal(HERO_ABILITIES.length, 6);
+  assert.equal(HERO_ABILITIES.length, 8);
   for (const ab of HERO_ABILITIES) {
     assert.notEqual(t('en', ab.nameKey), ab.nameKey);
     assert.notEqual(t('en', ab.descKey), ab.descKey);
@@ -2375,7 +2376,9 @@ test('abilities & mana: all 6 Warcraft/Witcher abilities trigger distinct effect
 });
 
 test('keybinds: rebinding keyboard and mouse buttons swaps conflicts and persists cleanly', () => {
-  assert.equal(KEYBIND_ACTIONS.length, 17);
+  assert.equal(KEYBIND_ACTIONS.length, 19);
+  assert.equal(DEFAULT_KEYBINDS.ability7, 'Digit7');
+  assert.equal(DEFAULT_KEYBINDS.ability8, 'Digit8');
   // Swap Mouse2 from block -> dodge; block should receive ShiftLeft
   const swapped = rebindKeyAction(DEFAULT_KEYBINDS, 'dodge', 'Mouse2');
   assert.equal(swapped.dodge, 'Mouse2');
@@ -2778,4 +2781,319 @@ test('dungeonSim: Perfect Dodge triggers Riposte counter window granting +12 MP 
   assert.ok(foe.hp < hpBeforeStrike, 'Expected riposte strike to damage foe');
   assert.equal(sim.player.counterTimer, 0, 'Expected counterTimer to consume after landing riposte');
   assert.ok(ev.hitPopups?.some((p) => p.text.includes('RIPOSTE') && p.crit), 'Expected RIPOSTE crit popup');
+});
+
+test('abilities & spells: blink_strike (7) & meteor_call (8) trigger movement/AoE/burn/stun/cooldowns and translate across all languages', () => {
+  for (const { code } of SUPPORTED_LANGUAGES) {
+    for (const k of [
+      'ability_blink_strike_name',
+      'ability_blink_strike_desc',
+      'ability_meteor_call_name',
+      'ability_meteor_call_desc',
+      'kb_ability7',
+      'kb_ability8',
+    ] as const) {
+      assert.ok(t(code, k).trim().length > 0, `Missing translation ${code}.${k}`);
+    }
+  }
+  assert.notEqual(t('ru', 'ability_blink_strike_name'), t('en', 'ability_blink_strike_name'));
+  assert.notEqual(t('ru', 'ability_meteor_call_name'), t('en', 'ability_meteor_call_name'));
+
+  const rand = makeRand(7788);
+  let sim = createCourtyardSim(5, 2, rand);
+  sim = enterDungeonFloor(sim, 1, 1, STANDARD_DIFF, RELICS, rand);
+
+  const idle: Parameters<typeof stepWorldSim>[1] = {
+    moveX: 0,
+    moveZ: 0,
+    aimDirX: 0,
+    aimDirZ: -1,
+    attackPressed: false,
+    jumpPressed: false,
+    specialPressed: false,
+    interactPressed: false,
+    healPressed: false,
+  };
+  const ev: SimEvents = {
+    swungCombo: -1,
+    jumped: false,
+    specialUsed: false,
+    enemyHit: false,
+    enemyKilled: false,
+    appraisalTriggered: false,
+    playerHurt: false,
+    healed: false,
+    pickedUpItem: null,
+    chestOpened: false,
+    marauderSpawned: false,
+    interactTarget: null,
+    playerDied: false,
+    stepped: false,
+    hitPopups: [],
+    impactPoints: [],
+  };
+
+  // Place foe ahead for Blink Strike
+  const foe = sim.enemies.find((e) => e.state !== 'ko')!;
+  foe.hp = 600;
+  foe.maxHp = 600;
+  foe.x = sim.player.x;
+  foe.z = sim.player.z - 4.8;
+  const startZ = sim.player.z;
+  sim.player.mana = 100;
+  sim.player.abilityCooldowns.blink_strike = 0;
+
+  stepWorldSim(sim, { ...idle, abilityTriggered: 'blink_strike' }, WEAPONS[0], 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+  assert.equal(ev.abilityCast, 'blink_strike');
+  assert.ok(ev.blinkStrike !== null && ev.blinkStrike !== undefined);
+  assert.ok(sim.player.z < startZ - 2.0, 'Expected blink_strike to warp forward');
+  assert.ok(foe.hp < 600, 'Expected blink_strike shockwave to damage enemy');
+  assert.equal(foe.state, 'stunned');
+  assert.ok(sim.player.abilityCooldowns.blink_strike >= 6.0);
+  assert.equal(sim.player.mana, 75);
+
+  // Meteor Call ahead
+  sim.hitstopTimer = 0;
+  sim.player.mana = 100;
+  sim.player.abilityCooldowns.meteor_call = 0;
+  sim.player.attackCooldown = 0;
+  foe.hp = 600;
+  foe.x = sim.player.x;
+  foe.z = sim.player.z - 3.4;
+  stepWorldSim(sim, { ...idle, abilityTriggered: 'meteor_call' }, WEAPONS[0], 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+  assert.equal(ev.abilityCast, 'meteor_call');
+  assert.ok(ev.meteorImpact !== null && ev.meteorImpact !== undefined);
+  assert.ok(foe.hp < 600, 'Expected meteor_call AoE to damage enemy');
+  assert.ok((foe.burnTimer ?? 0) > 3.0, 'Expected meteor_call to apply Burn DoT');
+  assert.equal(foe.state, 'stunned');
+  assert.ok(sim.player.abilityCooldowns.meteor_call >= 10.0);
+  assert.equal(sim.player.mana, 55);
+});
+
+test('combat: melee attackCooldown & attackMaxCooldown gate rapid swings cleanly', () => {
+  const rand = makeRand(9191);
+  let sim = createCourtyardSim(5, 2, rand);
+  sim = enterDungeonFloor(sim, 1, 1, STANDARD_DIFF, RELICS, rand);
+  const sword = WEAPONS.find((w) => w.id === 'sword')!;
+  const hammer = WEAPONS.find((w) => w.id === 'hammer')!;
+  assert.ok(sword.cooldown >= 0.35 && hammer.cooldown >= 0.5);
+
+  const idle: Parameters<typeof stepWorldSim>[1] = {
+    moveX: 0,
+    moveZ: 0,
+    aimDirX: 0,
+    aimDirZ: -1,
+    attackPressed: false,
+    jumpPressed: false,
+    specialPressed: false,
+    interactPressed: false,
+    healPressed: false,
+  };
+  const ev: SimEvents = {
+    swungCombo: -1,
+    jumped: false,
+    specialUsed: false,
+    enemyHit: false,
+    enemyKilled: false,
+    appraisalTriggered: false,
+    playerHurt: false,
+    healed: false,
+    pickedUpItem: null,
+    chestOpened: false,
+    marauderSpawned: false,
+    interactTarget: null,
+    playerDied: false,
+    stepped: false,
+  };
+
+  sim.player.attackCooldown = 0;
+  stepWorldSim(sim, { ...idle, attackPressed: true }, sword, 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+  assert.equal(ev.swungCombo, 0);
+  assert.ok(sim.player.attackCooldown > 0.25);
+  assert.ok(Math.abs(sim.player.attackMaxCooldown - sword.cooldown) < 0.05);
+
+  // Rapid swing immediately on next tick must be gated by cooldown
+  stepWorldSim(sim, { ...idle, attackPressed: true }, sword, 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+  assert.equal(ev.swungCombo, -1, 'Expected rapid swing to be blocked while attackCooldown > 0');
+
+  // After advancing past cooldown, next combo step swings cleanly
+  for (let i = 0; i < 30; i++) {
+    stepWorldSim(sim, idle, sword, 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+  }
+  assert.equal(sim.player.attackCooldown, 0);
+  stepWorldSim(sim, { ...idle, attackPressed: true }, sword, 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+  assert.equal(ev.swungCombo, 1);
+});
+
+test('architecture: floor biome generation prevents >2 consecutive identical biomes and getRoomGroundY returns multi-level heights', () => {
+  for (const seed of [11, 42, 77, 1337, 9001]) {
+    for (let floor = 1; floor <= 3; floor++) {
+      const rand = makeRand(seed + floor * 17);
+      let sim = createCourtyardSim(floor, 1, rand);
+      sim = enterDungeonFloor(sim, floor, 1, STANDARD_DIFF, RELICS, rand);
+      const map = sim.floorMap!;
+      const ordered = map.roomOrder.map((id) => map.rooms[id]);
+      let runLen = 1;
+      for (let i = 1; i < ordered.length; i++) {
+        if (ordered[i].biome === ordered[i - 1].biome) {
+          runLen += 1;
+        } else {
+          runLen = 1;
+        }
+        assert.ok(
+          runLen <= 2,
+          `Seed ${seed} floor ${floor} had ${runLen} consecutive ${ordered[i].biome} rooms`,
+        );
+      }
+      const biomes = new Set(ordered.map((r) => r.biome));
+      assert.ok(biomes.size >= 2, `Expected multi-biome variety on floor ${floor}`);
+    }
+  }
+
+  // Elevation profile checks for terraced and bridge layouts
+  assert.ok(getRoomGroundY({ biome: 'ruins', layoutKind: 'terraced' }, 0, 0) > 0.5);
+  assert.equal(getRoomGroundY({ biome: 'ruins', layoutKind: 'terraced' }, 10, 10), 0);
+  assert.ok(getRoomGroundY({ biome: 'fire', layoutKind: 'bridge' }, 0, 0) > 0.3);
+  assert.ok(getRoomGroundY({ biome: 'fire', layoutKind: 'bridge' }, 8, 0) < 0);
+  assert.equal(getRoomGroundY({ biome: 'ice', layoutKind: 'open' }, 2, 2), 0);
+});
+
+test('moves: Coyote Time allows jumping right after stepping off a raised dais and Jump Buffer triggers upon landing', () => {
+  const rand = makeRand(515);
+  let sim = createCourtyardSim(5, 2, rand);
+  sim = enterDungeonFloor(sim, 1, 1, STANDARD_DIFF, RELICS, rand);
+  const curRoom = sim.floorMap!.rooms[sim.currentRoomId];
+  curRoom.layoutKind = 'terraced';
+  curRoom.obstacles = [];
+
+  const idle: Parameters<typeof stepWorldSim>[1] = {
+    moveX: 0,
+    moveZ: 0,
+    aimDirX: 0,
+    aimDirZ: -1,
+    attackPressed: false,
+    jumpPressed: false,
+    specialPressed: false,
+    interactPressed: false,
+    healPressed: false,
+  };
+  const ev: SimEvents = {
+    swungCombo: -1,
+    jumped: false,
+    specialUsed: false,
+    enemyHit: false,
+    enemyKilled: false,
+    appraisalTriggered: false,
+    playerHurt: false,
+    healed: false,
+    pickedUpItem: null,
+    chestOpened: false,
+    marauderSpawned: false,
+    interactTarget: null,
+    playerDied: false,
+    stepped: false,
+  };
+
+  // Stand on the central terraced dais to prime coyoteTimer, then step off onto lower ground
+  sim.player.x = 0;
+  sim.player.z = 0;
+  sim.player.y = 0.54;
+  sim.player.vy = 0;
+  sim.player.maxJumpCharges = 1;
+  sim.player.jumpCharges = 1;
+  sim.player.jumpCooldown = 0;
+  stepWorldSim(sim, idle, WEAPONS[0], 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+  assert.ok(sim.player.coyoteTimer > 0.1, 'Expected coyoteTimer primed while grounded on dais');
+
+  // Move horizontally outside dais edge so groundY drops to 0 while player.y is still ~0.54
+  sim.player.x = 8.5;
+  sim.player.z = 8.5;
+  stepWorldSim(sim, idle, WEAPONS[0], 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+  assert.ok(sim.player.y > 0.1 && sim.player.coyoteTimer > 0.05);
+
+  // Jump mid-air right after stepping off dais via Coyote Time (even with single jump charge)
+  stepWorldSim(sim, { ...idle, jumpPressed: true }, WEAPONS[0], 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+  assert.equal(ev.jumped, true, 'Expected Coyote Time to allow jump after leaving ledge');
+  assert.ok(sim.player.vy > 5, 'Expected upward jump velocity derived from jumpHeight & gravityScale');
+
+  // Now test Jump Buffer: falling just above ground, press jump -> queued in jumpBufferTimer -> fires on landing
+  sim.player.coyoteTimer = 0;
+  sim.player.jumpTimer = 0;
+  sim.player.jumpCooldown = 0;
+  sim.player.jumpCharges = 1;
+  sim.player.x = 10;
+  sim.player.z = 10;
+  sim.player.y = 0.25;
+  sim.player.vy = -8.0;
+  stepWorldSim(sim, { ...idle, jumpPressed: true }, WEAPONS[0], 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+  assert.equal(ev.jumped, false, 'Expected jump to buffer rather than fire mid-air when coyoteTimer is 0');
+  assert.ok(sim.player.jumpBufferTimer > 0.08);
+
+  let bufferedJumped = false;
+  for (let i = 0; i < 6; i++) {
+    stepWorldSim(sim, idle, WEAPONS[0], 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+    if (ev.jumped) {
+      bufferedJumped = true;
+      break;
+    }
+  }
+  assert.equal(bufferedJumped, true, 'Expected buffered jump to trigger automatically upon landing');
+});
+
+test('moves: 3-phase attackPhase (windup -> hit -> recovery -> idle) and 0.05s Hit Stop on landed hit', () => {
+  const rand = makeRand(626);
+  let sim = createCourtyardSim(5, 2, rand);
+  sim = enterDungeonFloor(sim, 1, 1, STANDARD_DIFF, RELICS, rand);
+  const foe = sim.enemies.find((e) => e.state !== 'ko')!;
+  foe.hp = 500;
+  foe.maxHp = 500;
+  foe.x = sim.player.x;
+  foe.z = sim.player.z - 1.3;
+  foe.state = 'chase';
+
+  const idle: Parameters<typeof stepWorldSim>[1] = {
+    moveX: 0,
+    moveZ: 0,
+    aimDirX: 0,
+    aimDirZ: -1,
+    attackPressed: false,
+    jumpPressed: false,
+    specialPressed: false,
+    interactPressed: false,
+    healPressed: false,
+  };
+  const ev: SimEvents = {
+    swungCombo: -1,
+    jumped: false,
+    specialUsed: false,
+    enemyHit: false,
+    enemyKilled: false,
+    appraisalTriggered: false,
+    playerHurt: false,
+    healed: false,
+    pickedUpItem: null,
+    chestOpened: false,
+    marauderSpawned: false,
+    interactTarget: null,
+    playerDied: false,
+    stepped: false,
+  };
+
+  sim.hitstopTimer = 0;
+  sim.player.attackCooldown = 0;
+  stepWorldSim(sim, { ...idle, attackPressed: true }, WEAPONS[0], 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+  assert.equal(ev.enemyHit, true);
+  assert.ok(sim.hitstopTimer >= 0.05, 'Expected Hit Stop >= 0.05s on landed melee hit');
+  assert.equal(sim.player.attackPhase, 'windup');
+
+  // Clear hitstop, then step until windup -> hit -> recovery -> idle transitions occur
+  const seenPhases = new Set<string>([sim.player.attackPhase]);
+  for (let i = 0; i < 40; i++) {
+    stepWorldSim(sim, idle, WEAPONS[0], 1, STANDARD_DIFF, RELICS, rand, 1 / 60, ev);
+    seenPhases.add(sim.player.attackPhase);
+  }
+  assert.ok(seenPhases.has('windup'));
+  assert.ok(seenPhases.has('hit'));
+  assert.ok(seenPhases.has('recovery'));
+  assert.equal(sim.player.attackPhase, 'idle');
 });

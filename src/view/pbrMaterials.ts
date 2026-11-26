@@ -3,6 +3,7 @@ import * as THREE from 'three';
 export interface PbrTextureSet {
   map: THREE.CanvasTexture;
   bumpMap: THREE.CanvasTexture;
+  normalMap: THREE.CanvasTexture;
   roughnessMap: THREE.CanvasTexture;
 }
 
@@ -64,6 +65,65 @@ function configureTexture(
   tex.anisotropy = Math.max(1, maxAniso);
   tex.needsUpdate = true;
   return tex;
+}
+
+export function createNormalMapFromBumpCanvas(
+  bumpCanvas: HTMLCanvasElement,
+  strength: number,
+  maxAniso: number,
+  repeatX: number,
+  repeatY: number,
+): THREE.CanvasTexture {
+  const w = bumpCanvas.width;
+  const h = bumpCanvas.height;
+  const srcCtx = bumpCanvas.getContext('2d')!;
+  const src = srcCtx.getImageData(0, 0, w, h).data;
+
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = w;
+  outCanvas.height = h;
+  const outCtx = outCanvas.getContext('2d')!;
+  const outImg = outCtx.createImageData(w, h);
+  const dst = outImg.data;
+
+  const sampleH = (x: number, y: number): number => {
+    const wx = ((x % w) + w) % w;
+    const wy = ((y % h) + h) % h;
+    return src[(wy * w + wx) * 4] / 255;
+  };
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      // 3x3 Sobel filter with seamless wrap
+      const tl = sampleH(x - 1, y - 1);
+      const t = sampleH(x, y - 1);
+      const tr = sampleH(x + 1, y - 1);
+      const l = sampleH(x - 1, y);
+      const r = sampleH(x + 1, y);
+      const bl = sampleH(x - 1, y + 1);
+      const b = sampleH(x, y + 1);
+      const br = sampleH(x + 1, y + 1);
+
+      const dx = (tr + 2 * r + br) - (tl + 2 * l + bl);
+      const dy = (bl + 2 * b + br) - (tl + 2 * t + tr);
+
+      let nx = -dx * strength;
+      let ny = dy * strength;
+      let nz = 1.0;
+      const invLen = 1 / Math.hypot(nx, ny, nz);
+      nx *= invLen;
+      ny *= invLen;
+      nz *= invLen;
+
+      const idx = (y * w + x) * 4;
+      dst[idx] = Math.round((nx * 0.5 + 0.5) * 255);
+      dst[idx + 1] = Math.round((ny * 0.5 + 0.5) * 255);
+      dst[idx + 2] = Math.round((nz * 0.5 + 0.5) * 255);
+      dst[idx + 3] = 255;
+    }
+  }
+  outCtx.putImageData(outImg, 0, 0);
+  return configureTexture(outCanvas, false, maxAniso, repeatX, repeatY);
 }
 
 export function createStoneTextureSet(
@@ -247,6 +307,7 @@ export function createStoneTextureSet(
   return {
     map: configureTexture(albedoC, true, maxAniso, repeat, repeat),
     bumpMap: configureTexture(bumpC, false, maxAniso, repeat, repeat),
+    normalMap: createNormalMapFromBumpCanvas(bumpC, 2.2, maxAniso, repeat, repeat),
     roughnessMap: configureTexture(roughC, false, maxAniso, repeat, repeat),
   };
 }
@@ -342,6 +403,7 @@ export function createMasonryTextureSet(
   return {
     map: configureTexture(albedoC, true, maxAniso, repeatX, repeatY),
     bumpMap: configureTexture(bumpC, false, maxAniso, repeatX, repeatY),
+    normalMap: createNormalMapFromBumpCanvas(bumpC, 2.0, maxAniso, repeatX, repeatY),
     roughnessMap: configureTexture(roughC, false, maxAniso, repeatX, repeatY),
   };
 }
@@ -422,6 +484,7 @@ export function createWoodTextureSet(
   return {
     map: configureTexture(albedoC, true, maxAniso, repeat, repeat),
     bumpMap: configureTexture(bumpC, false, maxAniso, repeat, repeat),
+    normalMap: createNormalMapFromBumpCanvas(bumpC, 1.8, maxAniso, repeat, repeat),
     roughnessMap: configureTexture(roughC, false, maxAniso, repeat, repeat),
   };
 }
@@ -497,6 +560,7 @@ export function createRoofTileTextureSet(
   return {
     map: configureTexture(albedoC, true, maxAniso, repeat, repeat),
     bumpMap: configureTexture(bumpC, false, maxAniso, repeat, repeat),
+    normalMap: createNormalMapFromBumpCanvas(bumpC, 2.3, maxAniso, repeat, repeat),
     roughnessMap: configureTexture(roughC, false, maxAniso, repeat, repeat),
   };
 }
@@ -531,7 +595,7 @@ export function createMetalTextureSet(
   rctx.fillStyle = '#525252';
   rctx.fillRect(0, 0, size, size);
 
-  // Directional brushed micro-scratches & hammered dimples
+  // Directional brushed grain
   for (let i = 0; i < 240; i++) {
     const x = rnd() * size;
     const y = rnd() * size;
@@ -557,9 +621,49 @@ export function createMetalTextureSet(
     rctx.stroke();
   }
 
+  // Crisp combat wear micro-scratches & cross-gouges across armor & weapons
+  for (let i = 0; i < 95; i++) {
+    const x = rnd() * size;
+    const y = rnd() * size;
+    const ang = (rnd() - 0.5) * 2.4;
+    const len = 7 + rnd() * 24;
+    const ex = x + Math.cos(ang) * len;
+    const ey = y + Math.sin(ang) * len;
+
+    actx.strokeStyle = rnd() > 0.35 ? 'rgba(255,255,255,0.16)' : 'rgba(6,8,14,0.24)';
+    actx.lineWidth = 0.75 + rnd() * 0.7;
+    actx.beginPath();
+    actx.moveTo(x, y);
+    actx.lineTo(ex, ey);
+    actx.stroke();
+
+    // Recessed scratch trough + bright displaced ridge beside it
+    bctx.strokeStyle = 'rgba(28,28,28,0.65)';
+    bctx.lineWidth = 1.05;
+    bctx.beginPath();
+    bctx.moveTo(x, y);
+    bctx.lineTo(ex, ey);
+    bctx.stroke();
+
+    bctx.strokeStyle = 'rgba(232,232,232,0.38)';
+    bctx.lineWidth = 0.7;
+    bctx.beginPath();
+    bctx.moveTo(x + 0.8, y + 0.8);
+    bctx.lineTo(ex + 0.8, ey + 0.8);
+    bctx.stroke();
+
+    rctx.strokeStyle = 'rgba(185,185,185,0.45)';
+    rctx.lineWidth = 1.1;
+    rctx.beginPath();
+    rctx.moveTo(x, y);
+    rctx.lineTo(ex, ey);
+    rctx.stroke();
+  }
+
   return {
     map: configureTexture(albedoC, true, maxAniso, repeat, repeat),
     bumpMap: configureTexture(bumpC, false, maxAniso, repeat, repeat),
+    normalMap: createNormalMapFromBumpCanvas(bumpC, 1.9, maxAniso, repeat, repeat),
     roughnessMap: configureTexture(roughC, false, maxAniso, repeat, repeat),
   };
 }
@@ -611,11 +715,12 @@ export function createClothTextureSet(
   return {
     map: configureTexture(albedoC, true, maxAniso, repeat, repeat),
     bumpMap: configureTexture(bumpC, false, maxAniso, repeat, repeat),
+    normalMap: createNormalMapFromBumpCanvas(bumpC, 1.5, maxAniso, repeat, repeat),
     roughnessMap: configureTexture(roughC, false, maxAniso, repeat, repeat),
   };
 }
 
-export function createWaterRippleTexture(maxAniso: number): THREE.CanvasTexture {
+function createWaterRippleCanvas(): HTMLCanvasElement {
   const size = 256;
   const c = document.createElement('canvas');
   c.width = size;
@@ -639,7 +744,11 @@ export function createWaterRippleTexture(maxAniso: number): THREE.CanvasTexture 
     ctx.arc(cx, cy, maxR, 0, Math.PI * 2);
     ctx.fill();
   }
-  return configureTexture(c, false, maxAniso, 2, 2);
+  return c;
+}
+
+export function createWaterRippleTexture(maxAniso: number): THREE.CanvasTexture {
+  return configureTexture(createWaterRippleCanvas(), false, maxAniso, 2, 2);
 }
 
 export function createLightBeamTexture(): THREE.CanvasTexture {
@@ -732,6 +841,7 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
   const trackSet = (set: PbrTextureSet): PbrTextureSet => {
     markCachedPbrTex(set.map);
     markCachedPbrTex(set.bumpMap);
+    markCachedPbrTex(set.normalMap);
     markCachedPbrTex(set.roughnessMap);
     return set;
   };
@@ -766,7 +876,11 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
     createClothTextureSet('#9E342A', 'rgba(255,220,180,0.08)', maxAniso, 4),
   );
 
-  const waterRippleTex = trackTex(createWaterRippleTexture(maxAniso));
+  const waterRippleCanvas = createWaterRippleCanvas();
+  const waterRippleTex = trackTex(configureTexture(waterRippleCanvas, false, maxAniso, 2, 2));
+  const waterNormalTex = trackTex(
+    createNormalMapFromBumpCanvas(waterRippleCanvas, 2.0, maxAniso, 2, 2),
+  );
   const lightBeamTex = trackTex(createLightBeamTexture());
   const softShadowTex = trackTex(createSoftShadowTexture());
   const emberCoalTex = trackTex(createEmberCoalTexture(maxAniso));
@@ -775,10 +889,10 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       map: courtyardFloorSet.map,
-      bumpMap: courtyardFloorSet.bumpMap,
-      bumpScale: 0.045,
+      normalMap: courtyardFloorSet.normalMap,
+      normalScale: new THREE.Vector2(0.75, 0.75),
       roughnessMap: courtyardFloorSet.roughnessMap,
-      roughness: 0.86,
+      roughness: 0.84,
       metalness: 0.08,
     }),
   );
@@ -787,10 +901,10 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       map: stoneTrimSet.map,
-      bumpMap: stoneTrimSet.bumpMap,
-      bumpScale: 0.038,
+      normalMap: stoneTrimSet.normalMap,
+      normalScale: new THREE.Vector2(0.68, 0.68),
       roughnessMap: stoneTrimSet.roughnessMap,
-      roughness: 0.8,
+      roughness: 0.78,
       metalness: 0.12,
     }),
   );
@@ -799,8 +913,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       map: cobaltMasonrySet.map,
-      bumpMap: cobaltMasonrySet.bumpMap,
-      bumpScale: 0.04,
+      normalMap: cobaltMasonrySet.normalMap,
+      normalScale: new THREE.Vector2(0.72, 0.72),
       roughnessMap: cobaltMasonrySet.roughnessMap,
       roughness: 0.74,
       metalness: 0.18,
@@ -810,8 +924,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
   const cobaltDarkMat = trackMat(
     new THREE.MeshStandardMaterial({
       color: '#11182F',
-      bumpMap: cobaltMasonrySet.bumpMap,
-      bumpScale: 0.025,
+      normalMap: cobaltMasonrySet.normalMap,
+      normalScale: new THREE.Vector2(0.45, 0.45),
       roughness: 0.88,
       metalness: 0.14,
     }),
@@ -821,8 +935,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       map: woodSet.map,
-      bumpMap: woodSet.bumpMap,
-      bumpScale: 0.04,
+      normalMap: woodSet.normalMap,
+      normalScale: new THREE.Vector2(0.68, 0.68),
       roughnessMap: woodSet.roughnessMap,
       roughness: 0.78,
       metalness: 0.05,
@@ -833,8 +947,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
     new THREE.MeshStandardMaterial({
       color: '#9C5E46',
       map: woodSet.map,
-      bumpMap: woodSet.bumpMap,
-      bumpScale: 0.04,
+      normalMap: woodSet.normalMap,
+      normalScale: new THREE.Vector2(0.65, 0.65),
       roughnessMap: woodSet.roughnessMap,
       roughness: 0.84,
       metalness: 0.06,
@@ -845,8 +959,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
     new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       map: roofTileSet.map,
-      bumpMap: roofTileSet.bumpMap,
-      bumpScale: 0.055,
+      normalMap: roofTileSet.normalMap,
+      normalScale: new THREE.Vector2(0.85, 0.85),
       roughnessMap: roofTileSet.roughnessMap,
       roughness: 0.62,
       metalness: 0.06,
@@ -859,8 +973,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
     new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       map: goldMetalSet.map,
-      bumpMap: goldMetalSet.bumpMap,
-      bumpScale: 0.018,
+      normalMap: goldMetalSet.normalMap,
+      normalScale: new THREE.Vector2(0.55, 0.55),
       roughnessMap: goldMetalSet.roughnessMap,
       roughness: 0.24,
       metalness: 0.88,
@@ -872,8 +986,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
   const copperMat = trackMat(
     new THREE.MeshPhysicalMaterial({
       color: '#D97B48',
-      bumpMap: goldMetalSet.bumpMap,
-      bumpScale: 0.02,
+      normalMap: goldMetalSet.normalMap,
+      normalScale: new THREE.Vector2(0.55, 0.55),
       roughnessMap: goldMetalSet.roughnessMap,
       roughness: 0.28,
       metalness: 0.86,
@@ -886,8 +1000,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
     new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       map: steelMetalSet.map,
-      bumpMap: steelMetalSet.bumpMap,
-      bumpScale: 0.025,
+      normalMap: steelMetalSet.normalMap,
+      normalScale: new THREE.Vector2(0.65, 0.65),
       roughnessMap: steelMetalSet.roughnessMap,
       roughness: 0.42,
       metalness: 0.84,
@@ -900,8 +1014,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
     new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       map: clothBlueSet.map,
-      bumpMap: clothBlueSet.bumpMap,
-      bumpScale: 0.025,
+      normalMap: clothBlueSet.normalMap,
+      normalScale: new THREE.Vector2(0.5, 0.5),
       roughnessMap: clothBlueSet.roughnessMap,
       roughness: 0.88,
       sheen: 0.85,
@@ -916,8 +1030,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
     new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       map: clothCrimsonSet.map,
-      bumpMap: clothCrimsonSet.bumpMap,
-      bumpScale: 0.025,
+      normalMap: clothCrimsonSet.normalMap,
+      normalScale: new THREE.Vector2(0.5, 0.5),
       roughnessMap: clothCrimsonSet.roughnessMap,
       roughness: 0.84,
       sheen: 0.82,
@@ -929,8 +1043,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
   const obsidianMat = trackMat(
     new THREE.MeshPhysicalMaterial({
       color: '#190B26',
-      bumpMap: stoneTrimSet.bumpMap,
-      bumpScale: 0.045,
+      normalMap: stoneTrimSet.normalMap,
+      normalScale: new THREE.Vector2(0.7, 0.7),
       roughness: 0.38,
       metalness: 0.36,
       clearcoat: 0.6,
@@ -945,8 +1059,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
       color: '#20B4B0',
       emissive: '#136B70',
       emissiveIntensity: 0.65,
-      bumpMap: waterRippleTex,
-      bumpScale: 0.045,
+      normalMap: waterNormalTex,
+      normalScale: new THREE.Vector2(0.55, 0.55),
       roughness: 0.08,
       metalness: 0.12,
       clearcoat: 1.0,
@@ -958,40 +1072,40 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
 
   const emberBedMat = trackMat(
     new THREE.MeshStandardMaterial({
-      color: '#FFB066',
+      color: '#FF8438',
       map: emberCoalTex,
       emissiveMap: emberCoalTex,
-      emissive: '#FF7B2E',
-      emissiveIntensity: 2.35,
-      roughness: 0.55,
+      emissive: '#FF4E14',
+      emissiveIntensity: 1.42,
+      roughness: 0.58,
     }),
   );
 
   const tealGlowMat = trackMat(
     new THREE.MeshStandardMaterial({
-      color: '#56F2E2',
-      emissive: '#2EC4B6',
-      emissiveIntensity: 2.05,
-      roughness: 0.22,
-      metalness: 0.15,
+      color: '#22DFD0',
+      emissive: '#10B8AA',
+      emissiveIntensity: 1.28,
+      roughness: 0.2,
+      metalness: 0.18,
     }),
   );
 
   const crimsonGlowMat = trackMat(
     new THREE.MeshStandardMaterial({
-      color: '#FF5C77',
-      emissive: '#E11D48',
-      emissiveIntensity: 2.2,
-      roughness: 0.22,
-      metalness: 0.15,
+      color: '#E83254',
+      emissive: '#BD1036',
+      emissiveIntensity: 1.38,
+      roughness: 0.2,
+      metalness: 0.18,
     }),
   );
 
   const emberGlowMat = trackMat(
     new THREE.MeshStandardMaterial({
-      color: '#FFE1A8',
-      emissive: '#FF8C3B',
-      emissiveIntensity: 2.4,
+      color: '#FFAD5C',
+      emissive: '#E85E18',
+      emissiveIntensity: 1.44,
       roughness: 0.24,
     }),
   );
@@ -999,8 +1113,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
   const foliageMat = trackMat(
     new THREE.MeshStandardMaterial({
       color: '#1E5A5E',
-      bumpMap: clothBlueSet.bumpMap,
-      bumpScale: 0.03,
+      normalMap: clothBlueSet.normalMap,
+      normalScale: new THREE.Vector2(0.45, 0.45),
       roughness: 0.8,
       metalness: 0.04,
     }),
@@ -1037,8 +1151,8 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
       new THREE.MeshStandardMaterial({
         color: 0xffffff,
         map: set.map,
-        bumpMap: set.bumpMap,
-        bumpScale: 0.05,
+        normalMap: set.normalMap,
+        normalScale: new THREE.Vector2(0.8, 0.8),
         roughnessMap: set.roughnessMap,
         roughness: 0.82,
         metalness: 0.12,
@@ -1052,6 +1166,7 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
         if (oldMat) {
           oldMat.map?.dispose();
           oldMat.bumpMap?.dispose();
+          oldMat.normalMap?.dispose();
           oldMat.roughnessMap?.dispose();
           oldMat.dispose();
         }
@@ -1097,10 +1212,13 @@ export function createPbrLibrary(maxAniso: number): PbrLibrary {
 export interface HeroMaterialTextures {
   leather: PbrTextureSet;
   steel: PbrTextureSet;
+  darkSteel: PbrTextureSet;
   velvet: PbrTextureSet;
+  clothBlue: PbrTextureSet;
   gambeson: PbrTextureSet;
   gold: PbrTextureSet;
   skinBump: THREE.CanvasTexture;
+  skinNormal: THREE.CanvasTexture;
 }
 
 function createHeroLeatherTextureSet(maxAniso: number): PbrTextureSet {
@@ -1150,6 +1268,27 @@ function createHeroLeatherTextureSet(maxAniso: number): PbrTextureSet {
     rctx.fill();
   }
 
+  // Scuff micro-scratches on weathered straps
+  for (let i = 0; i < 45; i++) {
+    const x = rnd() * size;
+    const y = rnd() * size;
+    const ang = (rnd() - 0.5) * 2.2;
+    const len = 8 + rnd() * 20;
+    actx.strokeStyle = 'rgba(165, 110, 74, 0.22)';
+    actx.lineWidth = 0.9;
+    actx.beginPath();
+    actx.moveTo(x, y);
+    actx.lineTo(x + Math.cos(ang) * len, y + Math.sin(ang) * len);
+    actx.stroke();
+
+    bctx.strokeStyle = 'rgba(40,40,40,0.5)';
+    bctx.lineWidth = 1.0;
+    bctx.beginPath();
+    bctx.moveTo(x, y);
+    bctx.lineTo(x + Math.cos(ang) * len, y + Math.sin(ang) * len);
+    bctx.stroke();
+  }
+
   // Saddle-stitched border seams
   actx.strokeStyle = 'rgba(222,182,118,0.48)';
   bctx.strokeStyle = 'rgba(232,232,232,0.58)';
@@ -1173,6 +1312,7 @@ function createHeroLeatherTextureSet(maxAniso: number): PbrTextureSet {
   return {
     map: markCachedPbrTex(configureTexture(albedoC, true, maxAniso, 2, 2)),
     bumpMap: markCachedPbrTex(configureTexture(bumpC, false, maxAniso, 2, 2)),
+    normalMap: markCachedPbrTex(createNormalMapFromBumpCanvas(bumpC, 1.85, maxAniso, 2, 2)),
     roughnessMap: markCachedPbrTex(configureTexture(roughC, false, maxAniso, 2, 2)),
   };
 }
@@ -1242,11 +1382,15 @@ function createHeroGambesonTextureSet(maxAniso: number): PbrTextureSet {
   return {
     map: markCachedPbrTex(configureTexture(albedoC, true, maxAniso, 2, 2)),
     bumpMap: markCachedPbrTex(configureTexture(bumpC, false, maxAniso, 2, 2)),
+    normalMap: markCachedPbrTex(createNormalMapFromBumpCanvas(bumpC, 1.9, maxAniso, 2, 2)),
     roughnessMap: markCachedPbrTex(configureTexture(roughC, false, maxAniso, 2, 2)),
   };
 }
 
-function createSkinMicroBumpTexture(maxAniso: number): THREE.CanvasTexture {
+function createSkinMicroBumpMaps(maxAniso: number): {
+  bump: THREE.CanvasTexture;
+  normal: THREE.CanvasTexture;
+} {
   const size = 128;
   const c = document.createElement('canvas');
   c.width = size;
@@ -1261,7 +1405,10 @@ function createSkinMicroBumpTexture(maxAniso: number): THREE.CanvasTexture {
     ctx.arc(rnd() * size, rnd() * size, 0.6 + rnd() * 1.1, 0, Math.PI * 2);
     ctx.fill();
   }
-  return markCachedPbrTex(configureTexture(c, false, maxAniso, 2, 2));
+  return {
+    bump: markCachedPbrTex(configureTexture(c, false, maxAniso, 2, 2)),
+    normal: markCachedPbrTex(createNormalMapFromBumpCanvas(c, 1.1, maxAniso, 2, 2)),
+  };
 }
 
 const _heroTexCache = new Map<number, HeroMaterialTextures>();
@@ -1274,17 +1421,22 @@ export function createHeroMaterialTextures(maxAniso = 4): HeroMaterialTextures {
   const trackSet = (set: PbrTextureSet): PbrTextureSet => {
     markCachedPbrTex(set.map);
     markCachedPbrTex(set.bumpMap);
+    markCachedPbrTex(set.normalMap);
     markCachedPbrTex(set.roughnessMap);
     return set;
   };
+  const skin = createSkinMicroBumpMaps(key);
 
   const textures: HeroMaterialTextures = {
     leather: createHeroLeatherTextureSet(key),
     steel: trackSet(createMetalTextureSet('#9AA8BF', '#F0F5FF', key, 2)),
+    darkSteel: trackSet(createMetalTextureSet('#2A3348', '#526282', key, 2)),
     velvet: trackSet(createClothTextureSet('#9D2F27', '#6E1813', key, 3)),
+    clothBlue: trackSet(createClothTextureSet('#24396B', 'rgba(255,244,220,0.09)', key, 3)),
     gambeson: createHeroGambesonTextureSet(key),
     gold: trackSet(createMetalTextureSet('#D49622', '#FFE89E', key, 2)),
-    skinBump: createSkinMicroBumpTexture(key),
+    skinBump: skin.bump,
+    skinNormal: skin.normal,
   };
   _heroTexCache.set(key, textures);
   return textures;

@@ -25,6 +25,7 @@ import {
   createCourtyardSim,
   cycleTargetEnemyId,
   enterDungeonFloor,
+  getRoomGroundY,
   stepWorldSim,
   type DifficultyPreset,
   type DoorDir,
@@ -136,6 +137,8 @@ export interface LiveHudState {
   aegisShieldHits: number;
   abilityCooldowns: Record<AbilityId, number>;
   abilityCdRatios: Record<AbilityId, number>;
+  attackCooldown: number;
+  attackMaxCooldown: number;
   chainLightningReady: boolean;
   riposteReady: boolean;
   comboStreak: number;
@@ -452,7 +455,7 @@ export function mountGateScene(
     composer.setPixelRatio(dpr);
     composer.setSize(width, height);
     composer.addPass(new RenderPass(scene, camera));
-    bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height), 0.42, 0.48, 0.86);
+    bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height), 0.28, 0.34, 0.94);
     composer.addPass(bloomPass);
     composer.addPass(new ShaderPass(CinematicGradeShader));
     composer.addPass(new OutputPass());
@@ -668,6 +671,45 @@ export function mountGateScene(
     slot.mesh.visible = true;
   };
 
+  // Pooled 3D descending Meteor comet & impact pillar (zero per-frame allocations)
+  const meteorGeo = new THREE.DodecahedronGeometry(0.58, 1);
+  const meteorTrailGeo = new THREE.ConeGeometry(0.66, 3.4, 10, 1, true);
+  meteorTrailGeo.rotateX(Math.PI);
+  const meteorMat = new THREE.MeshBasicMaterial({
+    color: '#FDE047',
+    transparent: true,
+    opacity: 0.92,
+  });
+  const meteorTrailMat = new THREE.MeshBasicMaterial({
+    color: '#FB923C',
+    transparent: true,
+    opacity: 0.55,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const meteorGroup = new THREE.Group();
+  const meteorCoreMesh = new THREE.Mesh(meteorGeo, meteorMat);
+  const meteorTrailMesh = new THREE.Mesh(meteorTrailGeo, meteorTrailMat);
+  meteorTrailMesh.position.y = 1.65;
+  meteorGroup.add(meteorCoreMesh, meteorTrailMesh);
+  meteorGroup.visible = false;
+  scene.add(meteorGroup);
+  const meteorVfx = { active: false, life: 0, maxLife: 0.52, x: 0, z: 0, radius: 4.4 };
+  const spawnMeteor3D = (x: number, z: number, radius: number) => {
+    meteorVfx.active = true;
+    meteorVfx.maxLife = 0.52;
+    meteorVfx.life = meteorVfx.maxLife;
+    meteorVfx.x = x;
+    meteorVfx.z = z;
+    meteorVfx.radius = radius;
+    meteorGroup.position.set(x, 8.2, z);
+    meteorGroup.scale.setScalar(1);
+    meteorMat.opacity = 0.92;
+    meteorTrailMat.opacity = 0.58;
+    meteorGroup.visible = true;
+  };
+
   // Zero-GC Burst Particle Pool
   const POOL_SIZE = 48;
   const particles: BurstParticle[] = Array.from({ length: POOL_SIZE }, () => ({
@@ -796,6 +838,8 @@ export function mountGateScene(
     familiarCoreGeo,
     familiarRingGeo,
     moteGeo,
+    meteorGeo,
+    meteorTrailGeo,
   ]);
   const sharedMats = new Set<THREE.Material>([
     inkMat,
@@ -807,6 +851,8 @@ export function mountGateScene(
     familiarCoreMat,
     familiarRingMat,
     moteMat,
+    meteorMat,
+    meteorTrailMat,
     ...spellPool.map((s) => s.mat),
   ]);
   const sharedTex = new Set<THREE.Texture>([shadowTex, glowTex, envTexture]);
@@ -975,6 +1021,8 @@ export function mountGateScene(
           week: sim.week,
           dungeonMode: sim.dungeonMode,
           roomType: curRoom?.type ?? 'combat',
+          biome: curRoom?.biome ?? 'ruins',
+          layoutKind: curRoom?.layoutKind ?? 'pillars',
           roomIndex,
           doors: curRoom?.doors ?? [],
           obstacles: sim.obstacles,
@@ -1065,6 +1113,8 @@ export function mountGateScene(
     ignisCone: null,
     frostNova: null,
     aegisBurst: false,
+    blinkStrike: null,
+    meteorImpact: null,
     elementalReactions: [],
     impactPoints: [],
     lightningArcs: [],
@@ -1196,9 +1246,12 @@ export function mountGateScene(
     }
 
     const riposteReady = (sim.player.counterTimer ?? 0) > 0.05;
+    const attackCooldown = Math.max(0, sim.player.attackCooldown);
+    const attackMaxCooldown = Math.max(0.01, sim.player.attackMaxCooldown || activeWeapon.cooldown);
     const manaFloor = Math.floor(sim.player.mana);
     const cdSig = ABILITY_ORDER.map((aid) => abilityCooldowns[aid].toFixed(1)).join(',');
-    const hudSig = `${shellMode}|${sim.zone}|${sim.floor}|${sim.player.hp}|${manaFloor}|${sim.player.potions}|${sim.player.dodgeCharges}|${sim.player.jumpCharges}|${sim.player.comboStreak}|${Math.ceil(sim.marauderTimer)}|${sim.exitPortalOpen ? 1 : 0}|${targetEnemy ? `${targetEnemy.id}:${targetEnemy.hp}:${targetEnemy.tabLocked ? 1 : 0}:${Math.round(targetEnemy.distanceMeters * 2)}:${targetEnemy.burning ? 1 : 0}${targetEnemy.chilled ? 1 : 0}${targetEnemy.poisoned ? 1 : 0}${targetEnemy.stunned ? 1 : 0}` : '-'}|${cdSig}|${sim.player.chainLightningReady ? 1 : 0}|${riposteReady ? 1 : 0}|${appraisalFlash > 0 ? appraisalFlash.toFixed(1) : '0'}`;
+    const atkCdSig = attackCooldown > 0.02 ? attackCooldown.toFixed(2) : '0';
+    const hudSig = `${shellMode}|${sim.zone}|${sim.floor}|${sim.player.hp}|${manaFloor}|${sim.player.potions}|${sim.player.dodgeCharges}|${sim.player.jumpCharges}|${sim.player.comboStreak}|${Math.ceil(sim.marauderTimer)}|${sim.exitPortalOpen ? 1 : 0}|${targetEnemy ? `${targetEnemy.id}:${targetEnemy.hp}:${targetEnemy.tabLocked ? 1 : 0}:${Math.round(targetEnemy.distanceMeters * 2)}:${targetEnemy.burning ? 1 : 0}${targetEnemy.chilled ? 1 : 0}${targetEnemy.poisoned ? 1 : 0}${targetEnemy.stunned ? 1 : 0}` : '-'}|${cdSig}|${atkCdSig}|${sim.player.chainLightningReady ? 1 : 0}|${riposteReady ? 1 : 0}|${appraisalFlash > 0 ? appraisalFlash.toFixed(1) : '0'}`;
     if (!force && hudSig === lastHudIdleSig) return;
     lastHudIdleSig = hudSig;
 
@@ -1238,6 +1291,8 @@ export function mountGateScene(
       aegisShieldHits: sim.player.aegisShieldHits,
       abilityCooldowns,
       abilityCdRatios,
+      attackCooldown,
+      attackMaxCooldown,
       chainLightningReady: sim.player.chainLightningReady,
       riposteReady,
       comboStreak: sim.player.comboStreak,
@@ -1346,12 +1401,18 @@ export function mountGateScene(
       lookYaw = diff;
     }
 
+    const curRoomForGround =
+      sim.zone === 'dungeon' && sim.floorMap ? sim.floorMap.rooms[sim.currentRoomId] : null;
+    const playerGroundY = getRoomGroundY(curRoomForGround, sim.player.x, sim.player.z);
+
     heroRig.contactShadow.visible = highOrBetter;
     heroRig.groundAura.visible = highOrBetter;
     heroRig.updateAnimation(dt, elapsed, {
       x: sim.player.x,
       y: sim.player.y,
+      groundY: playerGroundY,
       z: sim.player.z,
+      vy: sim.player.vy,
       facing: sim.player.facing,
       speedRatio,
       walkPhase: sim.player.walkPhase,
@@ -1359,6 +1420,9 @@ export function mountGateScene(
       squashY: sim.player.squashY,
       attackAnimTimer: sim.player.attackAnimTimer,
       specialAnimTimer: sim.player.specialAnimTimer,
+      attackPhase: sim.player.attackPhase,
+      attackPhaseTimer: sim.player.attackPhaseTimer,
+      attackPhaseTotal: sim.player.attackPhaseTotal,
       comboStep: sim.player.comboStep,
       hitFlashTimer: sim.player.hitFlashTimer,
       invulnTimer: sim.player.invulnTimer,
@@ -1488,7 +1552,7 @@ export function mountGateScene(
       for (const npc of sim.npcs) {
         let rig = npcRigs.get(npc.id);
         if (!rig) {
-          rig = createNpcRig(npc.color, npc.role, inkMat, shadowTex, glowTex);
+          rig = createNpcRig(npc.color, npc.role, inkMat, shadowTex, glowTex, maxAniso);
           npcRigs.set(npc.id, rig);
           scene.add(rig.root);
         }
@@ -1527,7 +1591,7 @@ export function mountGateScene(
         seenEnemies.add(e.id);
         let rig = enemyRigs.get(e.id);
         if (!rig) {
-          rig = createEnemyRig(e.kind, inkMat, shadowTex, glowTex, e.bossId);
+          rig = createEnemyRig(e.kind, inkMat, shadowTex, glowTex, e.bossId, maxAniso);
           enemyRigs.set(e.id, rig);
           scene.add(rig.root);
         }
@@ -1624,7 +1688,8 @@ export function mountGateScene(
           scene.add(wg);
         }
         const lifeRatio = Math.max(0.05, wv.life / wv.maxLife);
-        wg.position.set(wv.x, 0.72, wv.z);
+        const wvGroundY = getRoomGroundY(curRoom, wv.x, wv.z);
+        wg.position.set(wv.x, wvGroundY + 0.72, wv.z);
         wg.rotation.y = wv.facing;
         wg.scale.setScalar(0.95 + (1 - lifeRatio) * 0.45);
         ((wg.children[0] as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity =
@@ -1632,7 +1697,7 @@ export function mountGateScene(
         ((wg.children[1] as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity =
           Math.min(0.95, lifeRatio * 1.5);
         if (highOrBetter) {
-          vfxOverlay.spawnTrailPoint(wv.x, 0.72, wv.z, wv.color, 28, 0.16);
+          vfxOverlay.spawnTrailPoint(wv.x, wvGroundY + 0.72, wv.z, wv.color, 28, 0.16);
         }
       }
       for (const [id, wg] of waveMeshes.entries()) {
@@ -1666,9 +1731,10 @@ export function mountGateScene(
           scene.add(g);
         }
         g.children[1].visible = highOrBetter;
+        const pkGroundY = getRoomGroundY(curRoom, pk.x, pk.z);
         const bobY = pk.y + Math.sin(elapsed * 4 + pk.age) * 0.14;
-        g.position.set(pk.x, 0, pk.z);
-        g.children[0].position.y = bobY;
+        g.position.set(pk.x, pkGroundY, pk.z);
+        g.children[0].position.y = bobY - pkGroundY;
         g.children[0].rotation.y = elapsed * 2.5;
       }
       for (const [id, g] of pickupMeshes.entries()) {
@@ -1696,6 +1762,25 @@ export function mountGateScene(
       } else {
         sp.mesh.scale.setScalar(0.5 + prog * (sp.maxScale - 0.5));
         sp.mat.opacity = Math.max(0, (1 - prog) * 0.72);
+      }
+    }
+
+    if (meteorVfx.active) {
+      meteorVfx.life -= dt;
+      if (meteorVfx.life <= 0) {
+        meteorVfx.active = false;
+        meteorGroup.visible = false;
+      } else {
+        const prog = 1 - meteorVfx.life / meteorVfx.maxLife;
+        const dropPhase = Math.min(1, prog / 0.36);
+        const y = 8.2 * (1 - dropPhase * dropPhase) + 0.45;
+        const flare = prog > 0.36 ? 1 + (prog - 0.36) * 2.4 : 1;
+        const fade = prog > 0.36 ? Math.max(0, 1 - (prog - 0.36) / 0.64) : 1;
+        meteorGroup.position.set(meteorVfx.x, y, meteorVfx.z);
+        meteorGroup.rotation.y += dt * 7;
+        meteorGroup.scale.set(flare, prog > 0.36 ? 0.55 + fade * 0.55 : 1, flare);
+        meteorMat.opacity = 0.92 * fade;
+        meteorTrailMat.opacity = 0.58 * fade;
       }
     }
 
@@ -1997,7 +2082,9 @@ export function mountGateScene(
       composer.setSize(currentWidth, currentHeight);
     }
     if (bloomPass) {
-      bloomPass.strength = level >= GraphicsLevel.Ultra ? 0.42 : 0.26;
+      bloomPass.strength = level >= GraphicsLevel.Ultra ? 0.28 : 0.18;
+      bloomPass.threshold = 0.94;
+      bloomPass.radius = 0.34;
     }
 
     const enableShadows = !isSoftwareGl && level >= GraphicsLevel.High;
@@ -2192,6 +2279,8 @@ export function mountGateScene(
         'ability4',
         'ability5',
         'ability6',
+        'ability7',
+        'ability8',
       ] as const;
       for (let ai = 0; ai < abilityActionKeys.length; ai++) {
         if (input.consumeActionJustPressed(abilityActionKeys[ai])) {
@@ -2385,6 +2474,36 @@ export function mountGateScene(
         if (stepEvents.abilityCast === 'blade_volley') {
           audio.playSpellCast('whirl');
           vfxOverlay.spawnShockwave(sim.player.x, 0.3, sim.player.z, 88, '#F4B942', 0.3);
+        }
+        if (stepEvents.blinkStrike) {
+          const bs = stepEvents.blinkStrike;
+          audio.playSpellCast('whirl');
+          audio.playDodge();
+          fovKick = -1.6;
+          combatFlashLight.color.set('#38BDF8');
+          combatFlashLight.position.set(bs.x2, 1.35, bs.z2);
+          combatFlashPower = 1.05;
+          vfxOverlay.spawnGhostAfterimage(bs.x1, 0.2, bs.z1, '#38BDF8');
+          vfxOverlay.spawnLightningArc(bs.x1, 0.9, bs.z1, bs.x2, 0.9, bs.z2);
+          spawnSpellRing3D(bs.x2, bs.z2, 3.6, '#38BDF8');
+          spawnBurst(bs.x2, 0.65, bs.z2, 16, 4.8, '#38BDF8');
+          vfxOverlay.spawnShockwave(bs.x2, 0.2, bs.z2, 145, '#38BDF8', 0.36);
+          vfxOverlay.spawnSparks(bs.x2, 0.75, bs.z2, 14, 5.4, '#BAE6FD');
+        }
+        if (stepEvents.meteorImpact) {
+          const mi = stepEvents.meteorImpact;
+          audio.playSpellCast('fire');
+          audio.playSlam();
+          fovKick = -2.3;
+          combatFlashLight.color.set('#FB923C');
+          combatFlashLight.position.set(mi.x, 1.6, mi.z);
+          combatFlashPower = 1.2;
+          spawnMeteor3D(mi.x, mi.z, mi.radius);
+          spawnSpellRing3D(mi.x, mi.z, mi.radius, '#FB923C');
+          spawnBurst(mi.x, 0.75, mi.z, 22, 6.0, '#FB923C');
+          vfxOverlay.spawnShockwave(mi.x, 0.25, mi.z, 210, '#FB923C', 0.48);
+          vfxOverlay.spawnSparks(mi.x, 0.85, mi.z, 20, 6.8, '#FDE047');
+          vfxOverlay.triggerHitFlash('#FB923C', 0.22);
         }
         if (stepEvents.jumped) {
           audio.playJump();

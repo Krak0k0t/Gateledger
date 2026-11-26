@@ -87,6 +87,30 @@ import { BackpackModal } from './ui/BackpackModal';
 import { BoonModal } from './ui/BoonModal';
 import { CharterModal } from './ui/CharterModal';
 import { CodexModal } from './ui/CodexModal';
+import {
+  BoltSparkIcon,
+  CalendarAlertIcon,
+  CameraEyeIcon,
+  CharterSealIcon,
+  CheckRuneIcon,
+  CodexTomeIcon,
+  FlameEmberIcon,
+  FullscreenGlyphIcon,
+  GamepadTouchIcon,
+  GlobeRuneIcon,
+  JumpWingIcon,
+  PauseGlyphIcon,
+  SatchelPackIcon,
+  SettingsCogIcon,
+  SkullBossIcon,
+  SnowflakeGlyphIcon,
+  SparkleGlyphIcon,
+  SpeakerOffIcon,
+  SpeakerOnIcon,
+  SupplyCompassIcon,
+  TrophyCrestIcon,
+  WarningTriangleIcon,
+} from './ui/CustomIcons';
 import { GraphicsQualitySwitch } from './ui/GraphicsQualitySwitch';
 import { LanguageModal } from './ui/LanguageModal';
 import { LedgerSummaryModal, type LedgerSummaryData } from './ui/LedgerSummaryModal';
@@ -399,6 +423,8 @@ export default function App() {
     aegisShieldHits: 0,
     abilityCooldowns: createInitialAbilityCooldowns(),
     abilityCdRatios: createInitialAbilityCooldowns(),
+    attackCooldown: 0,
+    attackMaxCooldown: 0,
     chainLightningReady: false,
     riposteReady: false,
     comboStreak: 0,
@@ -1571,9 +1597,10 @@ export default function App() {
                 </div>
 
                 {/* Graphics Quality Selector */}
-                <div className="glass-panel flex flex-col gap-1.5 w-full rounded-xl p-3">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#F4B942]">
-                    ✨ {t(lang, 'settings_gfx')}
+                <div className="glass-panel flex flex-col gap-1.5 w-full p-3">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#F4B942]">
+                    <SparkleGlyphIcon className="w-3.5 h-3.5 text-[#38E8D8]" />
+                    <span>{t(lang, 'settings_gfx')}</span>
                   </span>
                   <GraphicsQualitySwitch
                     lang={lang}
@@ -1588,72 +1615,84 @@ export default function App() {
                   />
                 </div>
 
-                {/* Start, Daily Gate, Codex & Language Action Row */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    data-start="true"
-                    onClick={handleStartCampaign}
-                    className="glass-gold-btn cursor-pointer px-5 py-2.5 rounded-xl font-bold text-base tracking-wide active:translate-y-0.5"
-                  >
-                    {t(lang, 'enter_courtyard')}
-                  </button>
+                {/* Primary Hero CTA + Compact Secondary Actions */}
+                <div className="flex flex-col gap-2.5 w-full">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <button
+                      type="button"
+                      data-start="true"
+                      onClick={handleStartCampaign}
+                      className="glass-gold-btn cursor-pointer px-7 py-3.5 font-bold text-base sm:text-lg tracking-wide active:translate-y-0.5 flex items-center gap-2"
+                    >
+                      <SparkleGlyphIcon className="w-4 h-4 text-[#081022]" />
+                      <span>{t(lang, 'enter_courtyard')}</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    data-testid="btn-daily-run"
-                    onClick={handleStartDailyRun}
-                    className="glass-teal-btn cursor-pointer px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm"
-                  >
-                    📅 {t(lang, 'daily_btn')} ({dailyInfo.label.slice(5)})
-                  </button>
-
-                  <button
-                    type="button"
-                    data-testid="btn-charter-title"
-                    onClick={() => {
-                      audioRef.current?.unlock();
-                      audioRef.current?.playUiClick();
-                      setShowCharterModal(true);
-                    }}
-                    className="glass-btn cursor-pointer px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 border border-[#F4B942]/45"
-                  >
-                    <span>📜 {t(lang, 'charter_btn')}</span>
-                    <span className="px-1.5 py-0.5 rounded bg-[#0A1024] text-[#F4B942] text-[10px] tabular-nums">
-                      ◆ {records.gateShards}
-                    </span>
-                    {pactMods.heatLevel > 0 && (
-                      <span className="px-1.5 py-0.5 rounded bg-[#3B1626] text-[#FF5E3A] text-[10px] tabular-nums">
-                        🔥 {pactMods.heatLevel}
+                    <button
+                      type="button"
+                      data-testid="btn-daily-run"
+                      onClick={handleStartDailyRun}
+                      className="glass-teal-btn cursor-pointer px-3.5 py-2.5 font-bold text-xs sm:text-sm inline-flex items-center gap-1.5"
+                    >
+                      <CalendarAlertIcon className="w-4 h-4 text-[#081022]" />
+                      <span>
+                        {t(lang, 'daily_btn')} ({dailyInfo.label.slice(5)})
                       </span>
-                    )}
-                  </button>
+                    </button>
+                  </div>
 
-                  <button
-                    type="button"
-                    data-testid="btn-codex-title"
-                    onClick={() => {
-                      audioRef.current?.unlock();
-                      audioRef.current?.playUiClick();
-                      setShowCodexModal(true);
-                    }}
-                    className="glass-btn cursor-pointer px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm"
-                  >
-                    📖 {t(lang, 'codex_btn')}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      data-testid="btn-charter-title"
+                      onClick={() => {
+                        audioRef.current?.unlock();
+                        audioRef.current?.playUiClick();
+                        setShowCharterModal(true);
+                      }}
+                      className="glass-btn cursor-pointer px-2.5 py-1.5 font-bold text-xs inline-flex items-center gap-1.5"
+                    >
+                      <CharterSealIcon className="w-3.5 h-3.5 text-[#38E8D8]" />
+                      <span>{t(lang, 'charter_btn')}</span>
+                      <span className="chamfer-badge px-1.5 py-0.5 bg-[#081022] text-[#F4B942] text-[10px] tabular-nums">
+                        {records.gateShards}
+                      </span>
+                      {pactMods.heatLevel > 0 && (
+                        <span className="chamfer-badge inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#3B1626] text-[#FF5E3A] text-[10px] tabular-nums">
+                          <FlameEmberIcon className="w-3 h-3" />
+                          <span>{pactMods.heatLevel}</span>
+                        </span>
+                      )}
+                    </button>
 
-                  <button
-                    type="button"
-                    data-testid="btn-language"
-                    onClick={() => {
-                      audioRef.current?.unlock();
-                      audioRef.current?.playUiClick();
-                      setShowLangModal(true);
-                    }}
-                    className="glass-btn cursor-pointer px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm"
-                  >
-                    🌐 {currentLangMeta.nativeName}
-                  </button>
+                    <button
+                      type="button"
+                      data-testid="btn-codex-title"
+                      onClick={() => {
+                        audioRef.current?.unlock();
+                        audioRef.current?.playUiClick();
+                        setShowCodexModal(true);
+                      }}
+                      className="glass-btn cursor-pointer px-2.5 py-1.5 font-bold text-xs inline-flex items-center gap-1.5"
+                    >
+                      <CodexTomeIcon className="w-3.5 h-3.5 text-[#F4B942]" />
+                      <span>{t(lang, 'codex_btn')}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      data-testid="btn-language"
+                      onClick={() => {
+                        audioRef.current?.unlock();
+                        audioRef.current?.playUiClick();
+                        setShowLangModal(true);
+                      }}
+                      className="glass-btn cursor-pointer px-2.5 py-1.5 font-bold text-xs inline-flex items-center gap-1.5"
+                    >
+                      <GlobeRuneIcon className="w-3.5 h-3.5 text-[#38E8D8]" />
+                      <span>{currentLangMeta.nativeName}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1668,26 +1707,30 @@ export default function App() {
                     setShowSettingsModal(true);
                   }}
                   title={t(lang, 'settings_btn')}
-                  className="glass-btn cursor-pointer w-10 h-10 flex items-center justify-center rounded-xl font-bold"
+                  className="glass-btn cursor-pointer w-10 h-10 flex items-center justify-center font-bold text-[#38E8D8]"
                 >
-                  ⚙
+                  <SettingsCogIcon className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
                   data-testid="btn-fullscreen"
                   onClick={toggleFullscreen}
-                  className="glass-btn cursor-pointer px-3 py-2 rounded-xl font-bold text-xs"
+                  className="glass-btn cursor-pointer px-3 py-2 font-bold text-xs inline-flex items-center gap-1.5"
                 >
-                  {isFullscreen ? '⤢ ' : '⛶ '}
-                  {t(lang, isFullscreen ? 'fullscreen_exit' : 'fullscreen_enter')}
+                  <FullscreenGlyphIcon exit={isFullscreen} className="w-3.5 h-3.5 text-[#38E8D8]" />
+                  <span>{t(lang, isFullscreen ? 'fullscreen_exit' : 'fullscreen_enter')}</span>
                 </button>
                 <button
                   type="button"
                   aria-label="Audio"
                   onClick={handleMuteToggle}
-                  className="glass-btn cursor-pointer w-10 h-10 flex items-center justify-center rounded-xl font-bold"
+                  className="glass-btn cursor-pointer w-10 h-10 flex items-center justify-center font-bold text-[#F4B942]"
                 >
-                  {liveHud.muted ? '🔇' : '🔊'}
+                  {liveHud.muted ? (
+                    <SpeakerOffIcon className="w-4 h-4" />
+                  ) : (
+                    <SpeakerOnIcon className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -1712,9 +1755,10 @@ export default function App() {
               data-testid="btn-show-hud"
               onClick={() => setHudHidden(false)}
               title={t(lang, 'hud_show')}
-              className="glass-btn cursor-pointer px-2.5 py-1.5 rounded-xl text-xs font-bold opacity-75 hover:opacity-100"
+              className="glass-btn cursor-pointer px-2.5 py-1.5 text-xs font-bold opacity-80 hover:opacity-100 inline-flex items-center gap-1.5"
             >
-              📷 {t(lang, 'hud_show')}
+              <CameraEyeIcon className="w-3.5 h-3.5 text-[#38E8D8]" />
+              <span>{t(lang, 'hud_show')}</span>
             </button>
           </div>
         )}
@@ -1757,34 +1801,36 @@ export default function App() {
                   {beltPerks.activeTags.length > 0 && (
                     <span
                       title={t(lang, 'belt_runes_label')}
-                      className="px-1.5 py-0.5 rounded bg-[#1A2547] text-[#F4B942] text-[10px] font-bold border border-[#F4B942]/45"
+                      className="chamfer-badge inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#1A2547] text-[#F4B942] text-[10px] font-bold border border-[#F4B942]/45"
                     >
-                      ✦ {beltPerks.activeTags.length} Belt
+                      <SparkleGlyphIcon className="w-3 h-3" />
+                      <span>{beltPerks.activeTags.length} Belt</span>
                     </span>
                   )}
 
                   {pactMods.heatLevel > 0 && (
                     <span
                       data-testid="hud-pact-badge"
-                      className="px-1.5 py-0.5 rounded bg-[#3B1626] text-[#FF5E3A] text-[10px] font-bold border border-[#FF5E3A]/60"
+                      className="chamfer-badge inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#3B1626] text-[#FF5E3A] text-[10px] font-bold border border-[#FF5E3A]/60"
                     >
-                      🔥 {pactMods.heatLevel}/5
+                      <FlameEmberIcon className="w-3 h-3" />
+                      <span>{pactMods.heatLevel}/5</span>
                     </span>
                   )}
 
                   {week > 4 && (
                     <span
                       data-testid="hud-ascension-badge"
-                      className="px-1.5 py-0.5 rounded bg-[#2E1065] text-[#C084FC] text-[10px] font-bold border border-[#C084FC]/55"
+                      className="chamfer-badge px-1.5 py-0.5 bg-[#2E1065] text-[#C084FC] text-[10px] font-bold border border-[#C084FC]/55"
                     >
-                      ♾ {t(lang, 'ascension_badge', { p: (week - 4) * 12 })}
+                      {t(lang, 'ascension_badge', { p: (week - 4) * 12 })}
                     </span>
                   )}
 
                   <span
                     data-testid="hud-day-event"
                     title={t(lang, dayEvent.descKey as TranslationKey)}
-                    className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#0C1429] text-[10px] font-bold border"
+                    className="chamfer-badge hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-[#081022] text-[10px] font-bold border"
                     style={{ borderColor: `${dayEvent.accent}70`, color: dayEvent.accent }}
                   >
                     <span>{dayEvent.icon}</span>
@@ -1795,9 +1841,10 @@ export default function App() {
                     <span
                       data-testid="hud-supplies-badge"
                       title={t(lang, 'supplies_title')}
-                      className="px-1.5 py-0.5 rounded bg-[#13293D] text-[#F4B942] text-[10px] font-bold border border-[#F4B942]/50"
+                      className="chamfer-badge inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#13293D] text-[#F4B942] text-[10px] font-bold border border-[#F4B942]/50"
                     >
-                      🧭 {liveHud.zone === 'courtyard' ? ownedSupplies.length : activeRunSupplies.length}
+                      <SupplyCompassIcon className="w-3 h-3 text-[#38E8D8]" />
+                      <span>{liveHud.zone === 'courtyard' ? ownedSupplies.length : activeRunSupplies.length}</span>
                     </span>
                   )}
 
@@ -1805,7 +1852,7 @@ export default function App() {
                     <span
                       data-testid="hud-familiar-badge"
                       title={`${t(lang, equippedFamiliarDef.nameKey as TranslationKey)} — ${t(lang, equippedFamiliarDef.descKey as TranslationKey)}`}
-                      className="px-1.5 py-0.5 rounded bg-[#0C1429] text-[10px] font-bold border"
+                      className="chamfer-badge px-1.5 py-0.5 bg-[#081022] text-[10px] font-bold border"
                       style={{
                         borderColor: `${equippedFamiliarDef.accent}75`,
                         color: equippedFamiliarDef.accent,
@@ -1817,14 +1864,15 @@ export default function App() {
 
                   <span
                     data-testid="hud-contract-chip"
-                    className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#0C1429] text-[#38E8D8] text-[10px] font-bold border border-[#38E8D8]/40"
+                    className="chamfer-badge hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#081022] text-[#38E8D8] text-[10px] font-bold border border-[#38E8D8]/40"
                   >
-                    <span>📜 {t(lang, activeContract.nameKey as TranslationKey)}</span>
+                    <CharterSealIcon className="w-3 h-3 text-[#F4B942]" />
+                    <span>{t(lang, activeContract.nameKey as TranslationKey)}</span>
                     <span className="tabular-nums text-[#FFF4DC]">
                       {activeContract.progress}/{activeContract.target}
                     </span>
                     <span className="text-[#F4B942]">
-                      (+{activeContract.rewardGold}g · +{scaleShardsByPact(activeContract.rewardShards, pactMods.shardMult)}◆)
+                      (+{activeContract.rewardGold}g · +{scaleShardsByPact(activeContract.rewardShards, pactMods.shardMult)})
                     </span>
                   </span>
 
@@ -1846,9 +1894,8 @@ export default function App() {
                         {liveHud.floorAnomaly !== 'none' && (
                           <span
                             data-testid="hud-anomaly-badge"
-                            className="px-1.5 py-0.5 rounded bg-[#5B21B6]/70 text-[#E9D5FF] text-[10px] font-bold border border-[#C084FC]/60"
+                            className="chamfer-badge px-1.5 py-0.5 bg-[#5B21B6]/70 text-[#E9D5FF] text-[10px] font-bold border border-[#C084FC]/60"
                           >
-                            ◈{' '}
                             {t(
                               lang,
                               liveHud.floorAnomaly === 'blood_moon'
@@ -1860,21 +1907,24 @@ export default function App() {
                           </span>
                         )}
                         {liveHud.maxJumpCharges > 1 && (
-                          <span className="px-1.5 py-0.5 rounded bg-[#1A2547] text-[#38E8D8] text-[10px] font-bold border border-[#38E8D8]/45">
-                            🦘 {liveHud.jumpCharges}/{liveHud.maxJumpCharges}
+                          <span className="chamfer-badge inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#1A2547] text-[#38E8D8] text-[10px] font-bold border border-[#38E8D8]/45">
+                            <JumpWingIcon className="w-3 h-3" />
+                            <span>{liveHud.jumpCharges}/{liveHud.maxJumpCharges}</span>
                           </span>
                         )}
                         {liveHud.chainLightningReady && (
-                          <span className="px-1.5 py-0.5 rounded bg-[#38E8D8]/20 text-[#38E8D8] text-[10px] font-bold border border-[#38E8D8]">
-                            ⚡ Chain
+                          <span className="chamfer-badge inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#38E8D8]/20 text-[#38E8D8] text-[10px] font-bold border border-[#38E8D8]">
+                            <BoltSparkIcon className="w-3 h-3" />
+                            <span>Chain</span>
                           </span>
                         )}
                         {liveHud.riposteReady && (
                           <span
                             data-testid="hud-riposte-badge"
-                            className="px-1.5 py-0.5 rounded bg-[#3B1806]/90 text-[#F4B942] text-[10px] font-bold border border-[#F4B942]"
+                            className="chamfer-badge inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#3B1806]/90 text-[#F4B942] text-[10px] font-bold border border-[#F4B942]"
                           >
-                            ⚡ {t(lang, 'hud_riposte')}
+                            <BoltSparkIcon className="w-3 h-3" />
+                            <span>{t(lang, 'hud_riposte')}</span>
                           </span>
                         )}
                         <button
@@ -1903,9 +1953,11 @@ export default function App() {
                         audioRef.current?.playUiClick();
                         callbacksRef.current.onBagToggle();
                       }}
-                      className="glass-btn cursor-pointer px-2 sm:px-2.5 h-8 sm:h-10 rounded-xl font-bold text-[11px] sm:text-xs"
+                      className="glass-btn cursor-pointer px-2 sm:px-2.5 h-8 sm:h-10 font-bold text-[11px] sm:text-xs inline-flex items-center gap-1.5"
                     >
-                      🎒 <span className="hidden sm:inline">{t(lang, 'hud_bag')} </span>({bagItemCount})
+                      <SatchelPackIcon className="w-3.5 h-3.5 text-[#F4B942]" />
+                      <span className="hidden sm:inline">{t(lang, 'hud_bag')}</span>
+                      <span>({bagItemCount})</span>
                     </button>
 
                     <button
@@ -1917,20 +1969,20 @@ export default function App() {
                         setShowCodexModal(true);
                       }}
                       title={t(lang, 'codex_btn')}
-                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 rounded-xl font-bold text-xs sm:text-sm"
+                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#F4B942]"
                     >
-                      📖
+                      <CodexTomeIcon className="w-4 h-4" />
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setTouchOverride(!touchEnabled)}
                       title="Touch Controls"
-                      className={`cursor-pointer w-8 h-8 sm:w-10 sm:h-10 rounded-xl font-bold text-xs sm:text-sm ${
-                        touchEnabled ? 'glass-teal-btn' : 'glass-btn'
+                      className={`cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold ${
+                        touchEnabled ? 'glass-teal-btn' : 'glass-btn text-[#38E8D8]'
                       }`}
                     >
-                      🕹
+                      <GamepadTouchIcon className="w-4 h-4" />
                     </button>
 
                     <button
@@ -1938,9 +1990,9 @@ export default function App() {
                       data-testid="btn-hide-hud"
                       onClick={() => setHudHidden(true)}
                       title={t(lang, 'hud_hide')}
-                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 rounded-xl font-bold text-xs sm:text-sm"
+                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#38E8D8]"
                     >
-                      📷
+                      <CameraEyeIcon className="w-4 h-4" />
                     </button>
 
                     <button
@@ -1952,9 +2004,10 @@ export default function App() {
                         setShowLangModal(true);
                       }}
                       title={t(lang, 'language_label')}
-                      className="glass-btn cursor-pointer px-2 sm:px-2.5 h-8 sm:h-10 rounded-xl font-bold text-[11px] sm:text-xs"
+                      className="glass-btn cursor-pointer px-2 sm:px-2.5 h-8 sm:h-10 font-bold text-[11px] sm:text-xs inline-flex items-center gap-1"
                     >
-                      🌐 {lang.toUpperCase()}
+                      <GlobeRuneIcon className="w-3.5 h-3.5 text-[#38E8D8]" />
+                      <span>{lang.toUpperCase()}</span>
                     </button>
 
                     <button
@@ -1966,9 +2019,9 @@ export default function App() {
                         setShowSettingsModal(true);
                       }}
                       title={t(lang, 'settings_btn')}
-                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 rounded-xl font-bold text-xs sm:text-sm"
+                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#38E8D8]"
                     >
-                      ⚙
+                      <SettingsCogIcon className="w-4 h-4" />
                     </button>
 
                     <button
@@ -1976,18 +2029,22 @@ export default function App() {
                       data-testid="btn-fullscreen-hud"
                       onClick={toggleFullscreen}
                       title={t(lang, isFullscreen ? 'fullscreen_exit' : 'fullscreen_enter')}
-                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 rounded-xl font-bold text-xs sm:text-sm"
+                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#38E8D8]"
                     >
-                      {isFullscreen ? '⤢' : '⛶'}
+                      <FullscreenGlyphIcon exit={isFullscreen} className="w-4 h-4" />
                     </button>
 
                     <button
                       type="button"
                       onClick={handleMuteToggle}
                       title="Mute [M]"
-                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 rounded-xl font-bold text-xs sm:text-sm"
+                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#F4B942]"
                     >
-                      {liveHud.muted ? '🔇' : '🔊'}
+                      {liveHud.muted ? (
+                        <SpeakerOffIcon className="w-4 h-4" />
+                      ) : (
+                        <SpeakerOnIcon className="w-4 h-4" />
+                      )}
                     </button>
 
                     <button
@@ -1995,9 +2052,10 @@ export default function App() {
                       data-testid="btn-pause"
                       onClick={handlePauseToggle}
                       title={t(lang, 'hud_pause')}
-                      className="glass-gold-btn cursor-pointer px-2 sm:px-3 h-8 sm:h-10 rounded-xl font-bold text-[11px] sm:text-xs"
+                      className="glass-gold-btn cursor-pointer px-2 sm:px-3 h-8 sm:h-10 font-bold text-[11px] sm:text-xs inline-flex items-center gap-1"
                     >
-                      ⏸ <span className="hidden sm:inline">{t(lang, 'hud_pause')}</span>
+                      <PauseGlyphIcon className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{t(lang, 'hud_pause')}</span>
                     </button>
                   </div>
 
@@ -2055,8 +2113,9 @@ export default function App() {
                   >
                     <div className="flex items-center justify-between gap-2 text-xs font-bold mb-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[#FF4D6D] font-ledger text-sm truncate">
-                          ☠ {t(lang, liveHud.activeBoss.nameKey as TranslationKey)}
+                        <span className="inline-flex items-center gap-1.5 text-[#FF4D6D] font-ledger text-sm truncate">
+                          <SkullBossIcon className="w-4 h-4 shrink-0" />
+                          <span className="truncate">{t(lang, liveHud.activeBoss.nameKey as TranslationKey)}</span>
                         </span>
                         <span className="hidden sm:inline text-[10px] text-[#9EB4DA] truncate">
                           · {t(lang, liveHud.activeBoss.titleKey as TranslationKey)}
@@ -2156,23 +2215,27 @@ export default function App() {
                         liveHud.targetEnemy.stunned) && (
                         <div className="flex items-center gap-1 mt-1 text-[9px] font-bold">
                           {liveHud.targetEnemy.burning && (
-                            <span className="px-1 py-px rounded bg-[#431407] border border-[#FF5E3A]/60 text-[#FF8C5A]">
-                              🔥 {t(lang, 'status_burn')}
+                            <span className="chamfer-badge inline-flex items-center gap-0.5 px-1.5 py-px bg-[#431407] border border-[#FF5E3A]/60 text-[#FF8C5A]">
+                              <FlameEmberIcon className="w-2.5 h-2.5" />
+                              <span>{t(lang, 'status_burn')}</span>
                             </span>
                           )}
                           {liveHud.targetEnemy.chilled && (
-                            <span className="px-1 py-px rounded bg-[#083344] border border-[#38E8D8]/60 text-[#38E8D8]">
-                              ❄ {t(lang, 'status_chill')}
+                            <span className="chamfer-badge inline-flex items-center gap-0.5 px-1.5 py-px bg-[#083344] border border-[#38E8D8]/60 text-[#38E8D8]">
+                              <SnowflakeGlyphIcon className="w-2.5 h-2.5" />
+                              <span>{t(lang, 'status_chill')}</span>
                             </span>
                           )}
                           {liveHud.targetEnemy.poisoned && (
-                            <span className="px-1 py-px rounded bg-[#2E1065] border border-[#A855F7]/60 text-[#C084FC]">
-                              ☠ {t(lang, 'status_poison')}
+                            <span className="chamfer-badge inline-flex items-center gap-0.5 px-1.5 py-px bg-[#2E1065] border border-[#A855F7]/60 text-[#C084FC]">
+                              <SkullBossIcon className="w-2.5 h-2.5" />
+                              <span>{t(lang, 'status_poison')}</span>
                             </span>
                           )}
                           {liveHud.targetEnemy.stunned && (
-                            <span className="px-1 py-px rounded bg-[#422006] border border-[#F4B942]/60 text-[#F4B942]">
-                              ⚡ {t(lang, 'status_stun')}
+                            <span className="chamfer-badge inline-flex items-center gap-0.5 px-1.5 py-px bg-[#422006] border border-[#F4B942]/60 text-[#F4B942]">
+                              <BoltSparkIcon className="w-2.5 h-2.5" />
+                              <span>{t(lang, 'status_stun')}</span>
                             </span>
                           )}
                         </div>
@@ -2183,33 +2246,37 @@ export default function App() {
                 {trophyToast && (
                   <div
                     data-testid="trophy-toast"
-                    className="glass-gold-btn px-4 py-1.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 shadow-[0_0_24px_rgba(244,185,66,0.55)]"
+                    className="glass-gold-btn px-4 py-1.5 font-bold text-xs sm:text-sm flex items-center gap-2"
                   >
-                    <span>🏆 {t(lang, 'trophy_unlocked')}:</span>
+                    <TrophyCrestIcon className="w-4 h-4 text-[#081022]" />
+                    <span>{t(lang, 'trophy_unlocked')}:</span>
                     <span>{trophyToast.icon} {trophyToast.title}</span>
                   </div>
                 )}
                 {liveHud.appraisalFlash > 0 && (
-                  <div className="glass-gold-btn px-4 py-1.5 rounded-lg font-bold text-sm">
-                    ✦ {t(lang, 'appraisal_hit')}
+                  <div className="glass-gold-btn px-4 py-1.5 font-bold text-sm inline-flex items-center gap-1.5">
+                    <SparkleGlyphIcon className="w-3.5 h-3.5 text-[#081022]" />
+                    <span>{t(lang, 'appraisal_hit')}</span>
                   </div>
                 )}
                 {liveHud.zone === 'dungeon' && liveHud.marauderSpawned && (
-                  <div className="px-4 py-1 rounded-lg bg-[#BD1F36]/95 text-white font-bold text-xs tracking-wider border border-[#FF6B81] shadow-[0_0_20px_rgba(255,59,92,0.65)]">
-                    ⚠ {t(lang, 'marauder_warning')}
+                  <div className="chamfer-badge inline-flex items-center gap-1.5 px-4 py-1 bg-[#BD1F36]/95 text-white font-bold text-xs tracking-wider border border-[#FF6B81]">
+                    <WarningTriangleIcon className="w-3.5 h-3.5" />
+                    <span>{t(lang, 'marauder_warning')}</span>
                   </div>
                 )}
                 {liveHud.zone === 'dungeon' && !liveHud.marauderSpawned && !liveHud.roomCleared && (
-                  <div className="glass-panel px-3 py-1 rounded-lg text-[#FFF4DC] text-[11px] font-bold">
+                  <div className="glass-panel px-3 py-1 text-[#FFF4DC] text-[11px] font-bold">
                     Shadow Marauder in {liveHud.marauderTimer}s
                   </div>
                 )}
                 {liveHud.zone === 'dungeon' && liveHud.roomCleared && !liveHud.exitPortalOpen && (
                   <div
                     data-testid="room-cleared-badge"
-                    className="glass-panel px-3 py-1 rounded-lg text-[#38E8D8] text-[11px] font-bold border border-[#38E8D8]/50"
+                    className="glass-panel inline-flex items-center gap-1.5 px-3 py-1 text-[#38E8D8] text-[11px] font-bold border border-[#38E8D8]/50"
                   >
-                    ✓ {t(lang, 'room_cleared')}
+                    <CheckRuneIcon className="w-3.5 h-3.5" />
+                    <span>{t(lang, 'room_cleared')}</span>
                   </div>
                 )}
                 {settings.showDay1Guide &&
@@ -2221,9 +2288,10 @@ export default function App() {
                     <div
                       data-ui-interactive="true"
                       data-testid="guide-day1-chip"
-                      className="pointer-events-auto glass-panel px-3 py-1 rounded-lg text-[11px] font-bold text-[#F4B942] flex items-center gap-2"
+                      className="pointer-events-auto glass-panel px-3 py-1 text-[11px] font-bold text-[#F4B942] flex items-center gap-2"
                     >
-                      <span>🧭 {t(lang, 'guide_day1')}</span>
+                      <SupplyCompassIcon className="w-3.5 h-3.5 text-[#38E8D8]" />
+                      <span>{t(lang, 'guide_day1')}</span>
                       <button
                         type="button"
                         onClick={() => setGuideDismissed(true)}
@@ -2235,8 +2303,8 @@ export default function App() {
                     </div>
                   )}
                 {showPortraitTip && (
-                  <div className="glass-panel px-3 py-1 rounded-lg text-[10px] font-bold text-[#9EB4DA]">
-                    📱 {t(lang, 'rotate_hint')}
+                  <div className="glass-panel px-3 py-1 text-[10px] font-bold text-[#9EB4DA]">
+                    {t(lang, 'rotate_hint')}
                   </div>
                 )}
                 {noticeBanner && (

@@ -4,6 +4,7 @@ import { formatKeybindLabel, type KeybindAction, type KeybindMap } from '../core
 import { t, type LanguageCode, type TranslationKey } from '../i18n/translations';
 import { HERO_ABILITIES, type AbilityDef, type AbilityId } from '../systems/abilities';
 import type { LiveHudState } from '../view/gateScene';
+import { ShieldAegisIcon, SparkleGlyphIcon, StarCrestIcon } from './CustomIcons';
 
 interface ActionBarHudProps {
   lang: LanguageCode;
@@ -63,6 +64,22 @@ function AbilityIconSvg({ id, color }: { id: AbilityId; color: string }) {
           <circle cx="12" cy="12" r="2.2" fill={color} />
         </svg>
       );
+    case 'blink_strike':
+      return (
+        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M13 2L4 14h7l-1 8 10-12h-7l0-8z" />
+        </svg>
+      );
+    case 'meteor_call':
+      return (
+        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 4l6 6" />
+          <path d="M17 3l4 4" />
+          <path d="M11 7l6 6" />
+          <circle cx="8.5" cy="15.5" r="4.5" fill={color} fillOpacity="0.25" />
+          <path d="M6.5 13.5l5-5" />
+        </svg>
+      );
   }
 }
 
@@ -93,6 +110,8 @@ export const ActionBarHud = memo(function ActionBarHud({
     accent,
     active,
     badge,
+    cooldown = 0,
+    maxCooldown = 0,
     svg,
   }: {
     testId: string;
@@ -103,42 +122,66 @@ export const ActionBarHud = memo(function ActionBarHud({
     accent: string;
     active?: boolean;
     badge?: string;
+    cooldown?: number;
+    maxCooldown?: number;
     svg: React.ReactNode;
-  }) => (
-    <button
-      key={testId}
-      type="button"
-      data-ui-interactive="true"
-      data-testid={testId}
-      aria-label={`${label} (${formatKeybindLabel(keybinds[bindKey])})`}
-      title={`${label} [${formatKeybindLabel(keybinds[bindKey])}] — ${hint}`}
-      onClick={(e) => {
-        e.currentTarget.blur();
-        onTriggerAction(action);
-      }}
-      className="group relative flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-[#0A1022] border transition-transform active:scale-95 cursor-pointer"
-      style={{
-        borderColor: active ? '#F4B942' : `${accent}66`,
-        boxShadow: active ? `0 0 12px ${accent}55` : 'inset 0 1px 0 rgba(255,244,220,0.08)',
-      }}
-    >
-      <span className="pointer-events-none">{svg}</span>
-      <span
-        data-testid={`badge-${bindKey}`}
-        className="pointer-events-none absolute -top-1.5 -left-1 px-1 py-px rounded bg-[#050814] border border-[#9EB4DA]/45 text-[9px] font-bold leading-none text-[#FFF4DC] tabular-nums"
+  }) => {
+    const onCd = cooldown > 0.02;
+    const ratio = onCd && maxCooldown > 0 ? Math.max(0, Math.min(1, cooldown / maxCooldown)) : 0;
+    return (
+      <button
+        key={testId}
+        type="button"
+        data-ui-interactive="true"
+        data-testid={testId}
+        aria-label={`${label} (${formatKeybindLabel(keybinds[bindKey])})`}
+        title={`${label} [${formatKeybindLabel(keybinds[bindKey])}] — ${hint}`}
+        onClick={(e) => {
+          e.currentTarget.blur();
+          onTriggerAction(action);
+        }}
+        className="chamfer-slot group relative overflow-hidden flex flex-col items-center justify-center w-10 h-10 sm:w-11 sm:h-11 bg-[#081022] border active:scale-95 cursor-pointer"
+        style={{
+          borderColor: active ? '#F4B942' : onCd ? '#364469' : `${accent}88`,
+          boxShadow: active
+            ? `inset 0 0 12px ${accent}55`
+            : 'inset 0 1px 0 rgba(56,232,216,0.16)',
+        }}
       >
-        {formatKeybindLabel(keybinds[bindKey])}
-      </span>
-      {badge && (
+        <span className={`pointer-events-none ${onCd ? 'opacity-45' : 'opacity-100'}`}>{svg}</span>
+        {onCd && (
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `conic-gradient(rgba(4,7,18,0.84) ${Math.round(ratio * 360)}deg, transparent ${Math.round(ratio * 360)}deg)`,
+            }}
+          />
+        )}
+        {onCd && (
+          <span
+            data-testid={`cd-verb-${action}`}
+            className="pointer-events-none absolute inset-0 flex items-center justify-center z-10 text-[10px] font-bold text-[#FFF4DC] tabular-nums drop-shadow-[0_1px_2px_#000]"
+          >
+            {cooldown.toFixed(1)}
+          </span>
+        )}
         <span
-          className="pointer-events-none absolute -bottom-1 -right-1 px-1 py-px rounded bg-[#050814] border text-[9px] font-bold leading-none tabular-nums"
-          style={{ borderColor: `${accent}88`, color: accent }}
+          data-testid={`badge-${bindKey}`}
+          className="pointer-events-none z-10 absolute top-0.5 left-0.5 px-1 py-px rounded bg-[#050814]/90 border border-[#9EB4DA]/45 text-[9px] font-bold leading-none text-[#FFF4DC] tabular-nums"
         >
-          {badge}
+          {formatKeybindLabel(keybinds[bindKey])}
         </span>
-      )}
-    </button>
-  );
+        {badge && (
+          <span
+            className="pointer-events-none z-10 absolute bottom-0.5 right-0.5 px-1 py-px rounded bg-[#050814]/90 border text-[9px] font-bold leading-none tabular-nums"
+            style={{ borderColor: `${accent}88`, color: accent }}
+          >
+            {badge}
+          </span>
+        )}
+      </button>
+    );
+  };
 
   const renderAbilitySlot = (ab: AbilityDef) => {
     const cd = hud.abilityCooldowns[ab.id] ?? 0;
@@ -182,14 +225,14 @@ export const ActionBarHud = memo(function ActionBarHud({
             pulseSlot(ab.id);
             onTriggerAction(vAction);
           }}
-          className={`relative overflow-hidden flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-lg border transition-transform duration-150 active:scale-90 cursor-pointer ${
-            bouncedId === ab.id ? 'scale-90' : 'scale-100'
-          } ${noMana && inDungeon ? 'bg-[#11152A] opacity-65' : 'bg-[#0B1226]'}`}
+          className={`chamfer-slot relative overflow-hidden flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 border active:scale-90 cursor-pointer ${
+            bouncedId === ab.id ? 'scale-90' : ''
+          } ${noMana && inDungeon ? 'bg-[#0E1428] opacity-65' : 'bg-[#081022]'}`}
           style={{
-            borderColor: onCd ? '#364469' : ab.category === 'magic' ? '#38E8D899' : '#F4B94299',
+            borderColor: onCd ? '#364469' : ab.category === 'magic' ? '#38E8D8AA' : '#F4B942AA',
             boxShadow:
               !onCd && !noMana
-                ? `inset 0 0 12px ${ab.accent}22, 0 2px 10px rgba(4,7,18,0.65)`
+                ? `inset 0 0 12px ${ab.accent}2A`
                 : 'none',
           }}
         >
@@ -244,7 +287,7 @@ export const ActionBarHud = memo(function ActionBarHud({
       className="pointer-events-none flex flex-col items-center gap-1.5 max-w-[calc(100vw-0.75rem)] select-none"
     >
       {/* Vitality + Mana + Dodge Pips Status Header */}
-      <div className="pointer-events-none flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 px-2.5 sm:px-3 py-1 rounded-lg bg-[#070C1B]/92 border border-[#F4B942]/35 shadow-[0_6px_18px_rgba(4,7,18,0.8)]">
+      <div className="chamfer-badge pointer-events-none flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 px-3 sm:px-3.5 py-1 bg-[#081022]/95 border border-[#38E8D8]/40 shadow-[inset_0_0_14px_rgba(56,232,216,0.12)]">
         {/* Vitality */}
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-bold text-[#FF6B81]">HP</span>
@@ -300,33 +343,36 @@ export const ActionBarHud = memo(function ActionBarHud({
         {hud.comboStreak >= 2 && (
           <span
             data-testid="actionbar-combo-badge"
-            className="px-1.5 py-0.5 rounded bg-[#3A2104] border border-[#F4B942] text-[10px] font-bold text-[#F4B942] tabular-nums shadow-[0_0_10px_rgba(244,185,66,0.35)]"
+            className="chamfer-badge inline-flex items-center gap-1 px-2 py-0.5 bg-[#3A2104] border border-[#F4B942] text-[10px] font-bold text-[#F4B942] tabular-nums"
           >
-            ★ ×{hud.comboStreak} {t(lang, 'hud_combo_hits')} (+{Math.min(15, hud.comboStreak)}%)
+            <StarCrestIcon className="w-3 h-3" />
+            <span>×{hud.comboStreak} {t(lang, 'hud_combo_hits')} (+{Math.min(15, hud.comboStreak)}%)</span>
           </span>
         )}
         {hud.aegisShieldHits > 0 && (
           <span
             data-testid="actionbar-aegis-badge"
-            className="px-1.5 py-0.5 rounded bg-[#422006] border border-[#F4B942] text-[10px] font-bold text-[#F4B942] tabular-nums"
+            className="chamfer-badge inline-flex items-center gap-1 px-2 py-0.5 bg-[#422006] border border-[#F4B942] text-[10px] font-bold text-[#F4B942] tabular-nums"
           >
-            ◈ {t(lang, 'hud_aegis_active')} ×{hud.aegisShieldHits}
+            <SparkleGlyphIcon className="w-3 h-3" />
+            <span>{t(lang, 'hud_aegis_active')} ×{hud.aegisShieldHits}</span>
           </span>
         )}
         {hud.blocking && (
           <span
             data-testid="actionbar-blocking-badge"
-            className="px-1.5 py-0.5 rounded bg-[#0F2A3F] border border-[#38E8D8] text-[10px] font-bold text-[#38E8D8]"
+            className="chamfer-badge inline-flex items-center gap-1 px-2 py-0.5 bg-[#0F2A3F] border border-[#38E8D8] text-[10px] font-bold text-[#38E8D8]"
           >
-            🛡 {t(lang, 'hud_block')}
+            <ShieldAegisIcon className="w-3 h-3" />
+            <span>{t(lang, 'hud_block')}</span>
           </span>
         )}
       </div>
 
-      {/* Main Hotbar Row: Martial Verbs | 6 Warcraft/Witcher Abilities | Potion */}
-      <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-xl bg-[#070B19]/94 border border-[#F4B942]/45 shadow-[0_12px_28px_rgba(4,7,18,0.88)]">
+      {/* Main Hotbar Row: Martial Verbs | 8 Warcraft/Witcher Abilities | Potion */}
+      <div className="glass-panel pointer-events-auto flex flex-col sm:flex-row items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 border-[#38E8D8]/45">
         {/* Core Combat Verbs */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5">
           {renderCoreSlot({
             testId: 'slot-verb-attack',
             action: 'attack',
@@ -334,6 +380,8 @@ export const ActionBarHud = memo(function ActionBarHud({
             label: t(lang, 'hud_attack'),
             hint: '3-hit combo + Mana on hit',
             accent: '#FF9E44',
+            cooldown: hud.attackCooldown,
+            maxCooldown: hud.attackMaxCooldown,
             svg: (
               <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="#FF9E44" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14.5 17.5L3 6V3h3l11.5 11.5" />
@@ -393,8 +441,8 @@ export const ActionBarHud = memo(function ActionBarHud({
 
         <div className="hidden sm:block h-8 w-px bg-[#F4B942]/30 mx-0.5" />
 
-        {/* 6 Physical & Magic Abilities (1-6) */}
-        <div className="flex items-center gap-1.5">
+        {/* 8 Physical & Magic Abilities (1-8) */}
+        <div className="grid grid-cols-4 sm:flex sm:items-center gap-1 sm:gap-1.5">
           {HERO_ABILITIES.map((ab) => renderAbilitySlot(ab))}
         </div>
 
@@ -411,10 +459,10 @@ export const ActionBarHud = memo(function ActionBarHud({
             e.currentTarget.blur();
             onTriggerAction('heal');
           }}
-          className={`relative flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-lg border transition-transform active:scale-95 cursor-pointer ${
+          className={`chamfer-slot relative overflow-hidden flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 border active:scale-95 cursor-pointer ${
             hud.potions > 0
-              ? 'bg-[#280D18] border-[#FF4D6D]/75'
-              : 'bg-[#0A1022] border-[#364469] opacity-50'
+              ? 'bg-[#280D18] border-[#FF4D6D]/85'
+              : 'bg-[#081022] border-[#364469] opacity-50'
           }`}
         >
           <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="#FF6B81" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -423,11 +471,11 @@ export const ActionBarHud = memo(function ActionBarHud({
           </svg>
           <span
             data-testid="badge-heal"
-            className="pointer-events-none absolute -top-1.5 -left-1 px-1 py-px rounded bg-[#050814] border border-[#9EB4DA]/45 text-[9px] font-bold leading-none text-[#FFF4DC] tabular-nums"
+            className="pointer-events-none absolute top-0.5 left-0.5 px-1 py-px rounded bg-[#050814]/90 border border-[#9EB4DA]/45 text-[9px] font-bold leading-none text-[#FFF4DC] tabular-nums"
           >
             {formatKeybindLabel(keybinds.heal)}
           </span>
-          <span className="pointer-events-none absolute -bottom-1 -right-1 px-1 py-px rounded bg-[#050814] border border-[#FF4D6D]/80 text-[9px] font-bold leading-none text-[#FF6B81] tabular-nums">
+          <span className="pointer-events-none absolute bottom-0.5 right-0.5 px-1 py-px rounded bg-[#050814]/90 border border-[#FF4D6D]/80 text-[9px] font-bold leading-none text-[#FF6B81] tabular-nums">
             ×{hud.potions}
           </span>
         </button>

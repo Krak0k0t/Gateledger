@@ -1,5 +1,12 @@
 import * as THREE from 'three';
-import type { DoorDir, ObstacleDef, RoomType } from '../systems/dungeonSim';
+import {
+  getRoomGroundY,
+  type DoorDir,
+  type ObstacleDef,
+  type RoomBiomeTag,
+  type RoomLayoutKind,
+  type RoomType,
+} from '../systems/dungeonSim';
 import type { DungeonMode } from '../systems/expedition';
 import { addInkEdges } from './characterMeshes';
 import { createPbrLibrary, type PbrLibrary } from './pbrMaterials';
@@ -294,6 +301,7 @@ function addInstancedScatter(
   }
   inst.instanceMatrix.needsUpdate = true;
   if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+  inst.computeBoundingSphere();
   parent.add(inst);
   return inst;
 }
@@ -519,6 +527,18 @@ export function buildCourtyardWorld(
     cxCap.position.set(s * 9.12, 0.39, 0);
     group.add(cxCap);
   }
+
+  // Instanced carved stone balustrade posts around courtyard perimeter (1 draw call for 24 posts)
+  const balusterSpots: { x: number; y: number; z: number; scale: number; rotY: number; color: string }[] = [];
+  for (let i = -3; i <= 3; i++) {
+    if (i === 0) continue;
+    const off = i * 2.25;
+    balusterSpots.push({ x: off, y: 0.56, z: 9.12, scale: 1, rotY: 0, color: '#D6DFEE' });
+    balusterSpots.push({ x: off, y: 0.56, z: -9.12, scale: 1, rotY: 0, color: '#D6DFEE' });
+    balusterSpots.push({ x: 9.12, y: 0.56, z: off, scale: 1, rotY: 0, color: '#C5D1E6' });
+    balusterSpots.push({ x: -9.12, y: 0.56, z: off, scale: 1, rotY: 0, color: '#C5D1E6' });
+  }
+  addInstancedScatter(group, new THREE.BoxGeometry(0.32, 0.32, 0.32), pbr.stoneTrimMat, balusterSpots);
 
   // 4 Corner Wrought-Iron Flickering Braziers
   const brazierFlames: THREE.Mesh[] = [];
@@ -1151,6 +1171,16 @@ export function buildCourtyardWorld(
   );
   if (courtyardSmoke) group.add(courtyardSmoke.points);
 
+  // Distance-LOD list for fine perimeter foliage/brazier LineSegments
+  const courtyardLodEntries: { obj: THREE.Object3D; x: number; z: number; maxDistSq: number }[] = [];
+  for (const t of trees) {
+    t.traverse((child) => {
+      if (child instanceof THREE.LineSegments) {
+        courtyardLodEntries.push({ obj: child, x: t.position.x, z: t.position.z, maxDistSq: 23 * 23 });
+      }
+    });
+  }
+
   return {
     group,
     update(elapsed, _exitPortalOpen, _chestsOpened, camX = 0, camZ = 0, extra) {
@@ -1158,6 +1188,13 @@ export function buildCourtyardWorld(
       pbr.waterRippleTex.offset.x = (elapsed * 0.04) % 1;
       pbr.waterRippleTex.offset.y = (elapsed * 0.03) % 1;
       courtyardSmoke?.update(elapsed);
+
+      for (let i = 0; i < courtyardLodEntries.length; i++) {
+        const entry = courtyardLodEntries[i];
+        const dx = entry.x - camX;
+        const dz = entry.z - camZ;
+        entry.obj.visible = dx * dx + dz * dz <= entry.maxDistSq;
+      }
 
       prestigeGroup.visible = Boolean(extra?.prestigeBanners);
       if (prestigeGroup.visible) {
@@ -1209,6 +1246,8 @@ export interface DungeonWorldOptions {
   week?: number;
   dungeonMode?: DungeonMode;
   roomType?: RoomType;
+  biome?: RoomBiomeTag;
+  layoutKind?: RoomLayoutKind;
   roomIndex?: number;
   doors?: DoorDir[];
   obstacles?: ObstacleDef[];
@@ -1217,44 +1256,36 @@ export interface DungeonWorldOptions {
 }
 
 interface RoomVisualTheme {
-  decorKind: 'sanctum' | 'archive' | 'armory' | 'garden' | 'vault' | 'citadel';
+  biome: RoomBiomeTag;
+  decorKind: 'ice' | 'fire' | 'ruins' | 'vault' | 'citadel';
   floorTop: string;
   floorBot: string;
   seamRgba: string;
   mossRgba: string;
   accent: string;
+  trenchColor: string;
+  trenchEmissive: string;
   lighting: ThemeLighting;
 }
 
-const WEEK_BIOME_PALETTE: Record<number, { floorTop: string; floorBot: string; accent: string }> = {
-  1: { floorTop: '#1C2A50', floorBot: '#0E152C', accent: '#38E8D8' },
-  2: { floorTop: '#36241E', floorBot: '#18100E', accent: '#F4B942' },
-  3: { floorTop: '#261945', floorBot: '#110B22', accent: '#C084FC' },
-  4: { floorTop: '#38171E', floorBot: '#17090D', accent: '#FF5E3A' },
-};
-
-const RIFT_BIOME_PALETTE = { floorTop: '#27102B', floorBot: '#100614', accent: '#F43F5E' };
-
 function resolveDungeonRoomTheme(
   roomType: RoomType,
-  roomIndex: number,
-  week: number,
+  _roomIndex: number,
+  _week: number,
   mode: DungeonMode = 'gate',
+  biome: RoomBiomeTag = 'ruins',
 ): RoomVisualTheme {
-  const weekIdx = ((Math.max(1, week) - 1) % 4) + 1;
-  const basePal =
-    mode === 'rift'
-      ? RIFT_BIOME_PALETTE
-      : (WEEK_BIOME_PALETTE[weekIdx] ?? WEEK_BIOME_PALETTE[1]);
-
   if (roomType === 'boss') {
     return {
+      biome,
       decorKind: 'citadel',
       floorTop: mode === 'rift' ? '#2A0E22' : '#2D121A',
       floorBot: '#12060B',
       seamRgba: 'rgba(255,59,92,0.28)',
       mossRgba: 'rgba(180,32,64,0.16)',
       accent: '#FF3B5C',
+      trenchColor: '#5C1124',
+      trenchEmissive: '#B8143B',
       lighting: {
         bg: '#13050A',
         fog: '#13050A',
@@ -1268,109 +1299,75 @@ function resolveDungeonRoomTheme(
       },
     };
   }
-  if (roomType === 'treasure') {
+  if (biome === 'ice') {
     return {
-      decorKind: 'vault',
-      floorTop: '#2E2216',
-      floorBot: '#16100A',
-      seamRgba: 'rgba(244,185,66,0.26)',
-      mossRgba: 'rgba(180,140,42,0.14)',
-      accent: '#F4B942',
+      biome,
+      decorKind: 'ice',
+      floorTop: roomType === 'treasure' ? '#1B345E' : '#14284E',
+      floorBot: '#09142B',
+      seamRgba: 'rgba(96, 218, 255, 0.28)',
+      mossRgba: 'rgba(56, 232, 216, 0.16)',
+      accent: roomType === 'treasure' ? '#60EFFF' : '#38E8D8',
+      trenchColor: '#1B5E86',
+      trenchEmissive: '#1696C8',
       lighting: {
-        bg: '#130D07',
-        fog: '#130D07',
-        keyColor: '#FFE8B0',
-        keyIntensity: 1.92,
-        hemiSky: '#80643A',
-        hemiGround: '#1B140C',
-        hemiIntensity: 0.78,
-        rimColor: '#F4B942',
-        spotColor: '#F4B942',
-      },
-    };
-  }
-  if (roomType === 'shrine') {
-    return {
-      decorKind: 'garden',
-      floorTop: '#162F2B',
-      floorBot: '#091816',
-      seamRgba: 'rgba(56,232,216,0.26)',
-      mossRgba: 'rgba(45,190,145,0.24)',
-      accent: '#38E8D8',
-      lighting: {
-        bg: '#071616',
-        fog: '#071616',
-        keyColor: '#C2FFF0',
+        bg: '#071124',
+        fog: '#071124',
+        keyColor: '#BEEBFF',
         keyIntensity: 1.82,
-        hemiSky: '#43857E',
-        hemiGround: '#0D1E1D',
+        hemiSky: '#4478B8',
+        hemiGround: '#0C1730',
         hemiIntensity: 0.76,
         rimColor: '#38E8D8',
-        spotColor: '#38E8D8',
+        spotColor: '#5EEAD4',
       },
     };
   }
-  if (roomType === 'start') {
+  if (biome === 'fire') {
     return {
-      decorKind: 'sanctum',
-      floorTop: basePal.floorTop,
-      floorBot: basePal.floorBot,
-      seamRgba: 'rgba(56,232,216,0.24)',
-      mossRgba: 'rgba(56,232,216,0.14)',
-      accent: basePal.accent,
+      biome,
+      decorKind: 'fire',
+      floorTop: roomType === 'treasure' ? '#3B2316' : '#311916',
+      floorBot: '#150908',
+      seamRgba: 'rgba(255, 118, 56, 0.28)',
+      mossRgba: 'rgba(214, 72, 28, 0.16)',
+      accent: roomType === 'treasure' ? '#F4B942' : '#FF7B42',
+      trenchColor: '#7A200E',
+      trenchEmissive: '#D84315',
       lighting: {
-        bg: mode === 'rift' ? '#140514' : '#080E1E',
-        fog: mode === 'rift' ? '#140514' : '#080E1E',
-        keyColor: mode === 'rift' ? '#FF9EB8' : '#A8C6FF',
-        keyIntensity: 1.78,
-        hemiSky: mode === 'rift' ? '#6B3D78' : '#5674C4',
-        hemiGround: '#161020',
-        hemiIntensity: 0.72,
-        rimColor: mode === 'rift' ? '#F43F5E' : '#38E8D8',
-        spotColor: '#38E8D8',
-      },
-    };
-  }
-  if (roomIndex % 2 === 0) {
-    // Crypt Archive / Ancient Library
-    return {
-      decorKind: 'archive',
-      floorTop: mode === 'rift' ? '#221438' : '#152A30',
-      floorBot: '#0B161B',
-      seamRgba: 'rgba(45,212,191,0.24)',
-      mossRgba: 'rgba(30,140,130,0.16)',
-      accent: mode === 'rift' ? '#C084FC' : '#2DD4BF',
-      lighting: {
-        bg: mode === 'rift' ? '#11071C' : '#071318',
-        fog: mode === 'rift' ? '#11071C' : '#071318',
-        keyColor: mode === 'rift' ? '#E4B8FF' : '#B6F5EA',
-        keyIntensity: 1.76,
-        hemiSky: mode === 'rift' ? '#6D4299' : '#3C7582',
-        hemiGround: '#0F1820',
+        bg: '#150807',
+        fog: '#150807',
+        keyColor: '#FFD0A6',
+        keyIntensity: 1.84,
+        hemiSky: '#8A4836',
+        hemiGround: '#1D0D0A',
         hemiIntensity: 0.74,
-        rimColor: mode === 'rift' ? '#C084FC' : '#38E8D8',
-        spotColor: '#38E8D8',
+        rimColor: '#FF6E38',
+        spotColor: '#FF9E44',
       },
     };
   }
-  // Ashen Armory / Basalt Brazier Hall
+  // 'ruins'
   return {
-    decorKind: 'armory',
-    floorTop: mode === 'rift' ? '#2F1426' : '#311F1B',
-    floorBot: '#150B0A',
-    seamRgba: 'rgba(255,123,66,0.24)',
-    mossRgba: 'rgba(180,82,42,0.14)',
-    accent: '#FF7B42',
+    biome: 'ruins',
+    decorKind: roomType === 'treasure' ? 'vault' : 'ruins',
+    floorTop: mode === 'rift' ? '#23173B' : '#172E29',
+    floorBot: '#091614',
+    seamRgba: 'rgba(52, 211, 153, 0.24)',
+    mossRgba: 'rgba(42, 175, 130, 0.24)',
+    accent: roomType === 'treasure' ? '#F4B942' : mode === 'rift' ? '#C084FC' : '#2DD4BF',
+    trenchColor: '#0F4D46',
+    trenchEmissive: '#10786B',
     lighting: {
-      bg: '#130908',
-      fog: '#130908',
-      keyColor: '#FFD3B0',
-      keyIntensity: 1.82,
-      hemiSky: '#7C4B42',
-      hemiGround: '#1A0F0E',
-      hemiIntensity: 0.72,
-      rimColor: '#FF7B42',
-      spotColor: '#FF9E44',
+      bg: mode === 'rift' ? '#11071C' : '#081514',
+      fog: mode === 'rift' ? '#11071C' : '#081514',
+      keyColor: mode === 'rift' ? '#E4B8FF' : '#C2F7E4',
+      keyIntensity: 1.78,
+      hemiSky: mode === 'rift' ? '#6D4299' : '#3C7E70',
+      hemiGround: '#0D1C1A',
+      hemiIntensity: 0.76,
+      rimColor: mode === 'rift' ? '#C084FC' : '#2DD4BF',
+      spotColor: '#38E8D8',
     },
   };
 }
@@ -1388,17 +1385,15 @@ export function buildDungeonWorld(
   const pbr = createPbrLibrary(maxAniso);
 
   const roomType = opts.roomType ?? 'combat';
+  const biome: RoomBiomeTag = opts.biome ?? 'ruins';
+  const layoutKind: RoomLayoutKind = opts.layoutKind ?? 'pillars';
   const roomIndex = opts.roomIndex ?? 0;
-  const theme = resolveDungeonRoomTheme(roomType, roomIndex, opts.week ?? 1, opts.dungeonMode ?? 'gate');
+  const theme = resolveDungeonRoomTheme(roomType, roomIndex, opts.week ?? 1, opts.dungeonMode ?? 'gate', biome);
   const doors = opts.doors ?? [];
-  const obstacles = opts.obstacles ?? [
-    { id: 'c1', x: -6.2, z: -4.6, radius: 0.85 },
-    { id: 'c2', x: 6.2, z: -4.6, radius: 0.85 },
-    { id: 'c3', x: -6.2, z: 4.6, radius: 0.85 },
-    { id: 'c4', x: 6.2, z: 4.6, radius: 0.85 },
-  ];
+  const obstacles = opts.obstacles ?? [];
   const hasExitPortal = opts.hasExitPortal ?? true;
   const half = opts.arenaHalfExtent ?? 20.5;
+  const roomHeightRef = { biome, layoutKind };
 
   const glowTex = createRadialGlowTexture(
     'rgba(255,255,255,0.9)',
@@ -1425,13 +1420,13 @@ export function buildDungeonWorld(
   const accentGlowMat = new THREE.MeshStandardMaterial({
     color: theme.accent,
     emissive: theme.accent,
-    emissiveIntensity: 1.05,
+    emissiveIntensity: 0.85,
     roughness: 0.24,
   });
   const crystalJewelMat = new THREE.MeshPhysicalMaterial({
     color: theme.accent,
     emissive: theme.accent,
-    emissiveIntensity: 0.36,
+    emissiveIntensity: 0.34,
     roughness: 0.14,
     metalness: 0.34,
     clearcoat: 1.0,
@@ -1443,10 +1438,104 @@ export function buildDungeonWorld(
 
   const slabSize = half * 2 + 0.8;
   const slab = new THREE.Mesh(new THREE.BoxGeometry(slabSize, 0.36, slabSize), floorMat);
-  slab.position.y = -0.18;
+  slab.position.y = layoutKind === 'bridge' ? -0.36 : -0.18;
   slab.receiveShadow = true;
   addInkEdges(slab, inkMat, 32);
   group.add(slab);
+
+  // Multi-Level Terrain Architecture (Terraced Dais + Ramps OR Elevated Stone Bridge + Biome Trenches)
+  if (layoutKind === 'terraced') {
+    const lowerStep = new THREE.Mesh(new THREE.BoxGeometry(12.2, 0.27, 12.2), pbr.cobaltMasonryMat);
+    lowerStep.position.y = 0.135;
+    lowerStep.receiveShadow = true;
+    addInkEdges(lowerStep, inkMat, 34);
+
+    const upperDais = new THREE.Mesh(new THREE.BoxGeometry(10.8, 0.54, 10.8), floorMat);
+    upperDais.position.y = 0.27;
+    upperDais.receiveShadow = true;
+    upperDais.castShadow = true;
+    addInkEdges(upperDais, inkMat, 32);
+
+    const daisTrim = new THREE.Mesh(new THREE.BoxGeometry(11.0, 0.08, 11.0), pbr.stoneTrimMat);
+    daisTrim.position.y = 0.5;
+    daisTrim.receiveShadow = true;
+    group.add(lowerStep, upperDais, daisTrim);
+
+    // 4 walkable stone ramps connecting courtyard floor to the +0.54m terrace
+    const rampLen = Math.hypot(1.6, 0.54);
+    const rampPitch = Math.atan2(0.54, 1.6);
+    const rampGeo = new THREE.BoxGeometry(4.2, 0.16, rampLen);
+    for (const [rx, rz, rotY, tiltSign] of [
+      [0, 6.2, 0, -1],
+      [0, -6.2, 0, 1],
+      [6.2, 0, Math.PI / 2, -1],
+      [-6.2, 0, Math.PI / 2, 1],
+    ] as const) {
+      const ramp = new THREE.Mesh(rampGeo, pbr.stoneTrimMat);
+      ramp.position.set(rx, 0.24, rz);
+      ramp.rotation.y = rotY;
+      ramp.rotation.x = tiltSign * rampPitch;
+      ramp.receiveShadow = true;
+      addInkEdges(ramp, inkMat, 34);
+      group.add(ramp);
+    }
+  } else if (layoutKind === 'bridge') {
+    // Side outer platforms at y = 0 + glowing recessed channels at y = -0.18 + raised center causeway at y = +0.36
+    const outerSideGeo = new THREE.BoxGeometry(8.5, 0.36, slabSize);
+    for (const sx of [-1, 1]) {
+      const sideDeck = new THREE.Mesh(outerSideGeo, floorMat);
+      sideDeck.position.set(sx * 16.5, -0.18, 0);
+      sideDeck.receiveShadow = true;
+      addInkEdges(sideDeck, inkMat, 34);
+      group.add(sideDeck);
+    }
+    // Door approach landing decks at North & South thresholds (y = 0)
+    const endApronGeo = new THREE.BoxGeometry(24.0, 0.36, 6.2);
+    for (const sz of [-1, 1]) {
+      const apron = new THREE.Mesh(endApronGeo, floorMat);
+      apron.position.set(0, -0.18, sz * 17.3);
+      apron.receiveShadow = true;
+      addInkEdges(apron, inkMat, 34);
+      group.add(apron);
+    }
+    // Recessed biome trench glowing strips (frost ice / molten magma / emerald moss water)
+    const trenchMat = new THREE.MeshStandardMaterial({
+      color: theme.trenchColor,
+      emissive: theme.trenchEmissive,
+      emissiveIntensity: 0.72,
+      roughness: 0.16,
+      metalness: 0.22,
+    });
+    const trenchGeo = new THREE.PlaneGeometry(6.4, 27.6);
+    for (const sx of [-1, 1]) {
+      const trench = new THREE.Mesh(trenchGeo, trenchMat);
+      trench.rotation.x = -Math.PI / 2;
+      trench.position.set(sx * 8.1, -0.175, 0);
+      group.add(trench);
+    }
+    // Elevated central stone causeway bridge (y = 0.36)
+    const bridgeDeck = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.56, 27.6), floorMat);
+    bridgeDeck.position.set(0, 0.08, 0);
+    bridgeDeck.receiveShadow = true;
+    bridgeDeck.castShadow = true;
+    addInkEdges(bridgeDeck, inkMat, 32);
+    const bridgeCurbGeo = new THREE.BoxGeometry(0.32, 0.14, 27.6);
+    for (const sx of [-1, 1]) {
+      const bCurb = new THREE.Mesh(bridgeCurbGeo, pbr.stoneTrimMat);
+      bCurb.position.set(sx * 3.55, 0.42, 0);
+      group.add(bCurb);
+    }
+    // Sloped North & South bridge approach ramps
+    const bRampGeo = new THREE.BoxGeometry(7.2, 0.16, 1.8);
+    for (const sz of [-1, 1]) {
+      const bRamp = new THREE.Mesh(bRampGeo, pbr.stoneTrimMat);
+      bRamp.position.set(0, 0.16, sz * 14.5);
+      bRamp.rotation.x = sz * Math.atan2(0.36, 1.4);
+      bRamp.receiveShadow = true;
+      group.add(bRamp);
+    }
+    group.add(bridgeDeck);
+  }
 
   // Shared static geometries for repeated dungeon props (cuts draw/dispose overhead & shares EdgesGeometry)
   const curbZGeo = new THREE.BoxGeometry(slabSize + 0.2, 0.34, 0.48);
@@ -1506,6 +1595,21 @@ export function buildDungeonWorld(
     group.add(curbX);
   }
 
+  // Instanced carved stone crenellations / merlons along dungeon perimeter curbs (1 draw call for 24+ blocks)
+  const merlonSpots: { x: number; y: number; z: number; scale: number; rotY: number; color: string }[] = [];
+  const stepDist = Math.max(4.5, (half - 3.5) / 3);
+  for (let idx = -3; idx <= 3; idx++) {
+    if (idx === 0) continue; // Keep door thresholds wide clear
+    const pos = idx * stepDist;
+    if (Math.abs(pos) < half - 1.5) {
+      merlonSpots.push({ x: pos, y: 0.48, z: -curbPos, scale: 1, rotY: 0, color: '#C8D3E6' });
+      merlonSpots.push({ x: pos, y: 0.48, z: curbPos, scale: 1, rotY: 0, color: '#C8D3E6' });
+      merlonSpots.push({ x: -curbPos, y: 0.48, z: pos, scale: 1, rotY: Math.PI / 2, color: '#B5C4DC' });
+      merlonSpots.push({ x: curbPos, y: 0.48, z: pos, scale: 1, rotY: Math.PI / 2, color: '#B5C4DC' });
+    }
+  }
+  addInstancedScatter(group, new THREE.BoxGeometry(0.95, 0.34, 0.56), pbr.stoneTrimMat, merlonSpots);
+
   const base = new THREE.Mesh(
     new THREE.CylinderGeometry(half * 1.62, half * 1.28, 2.6, 8),
     pbr.cobaltDarkMat,
@@ -1514,7 +1618,8 @@ export function buildDungeonWorld(
   base.position.y = -1.65;
   group.add(base);
 
-  // Room Floor Sigil Inlay + Center Volumetric Shaft on Key Chambers
+  // Room Floor Sigil Inlay (elevated flush with center terrain) + Center Volumetric Shaft
+  const centerFloorY = getRoomGroundY(roomHeightRef, 0, 0);
   if (roomType === 'boss' || roomType === 'shrine' || roomType === 'treasure' || roomType === 'start') {
     const sigilColor = theme.accent;
     const outerR = roomType === 'boss' ? 4.2 : 3.2;
@@ -1530,7 +1635,7 @@ export function buildDungeonWorld(
       }),
     );
     sigilRing.rotation.x = -Math.PI / 2;
-    sigilRing.position.y = 0.025;
+    sigilRing.position.y = centerFloorY + 0.025;
     const innerSigil = new THREE.Mesh(
       new THREE.RingGeometry(outerR * 0.52, outerR * 0.58, 24),
       new THREE.MeshBasicMaterial({
@@ -1543,44 +1648,46 @@ export function buildDungeonWorld(
       }),
     );
     innerSigil.rotation.x = -Math.PI / 2;
-    innerSigil.position.y = 0.024;
+    innerSigil.position.y = centerFloorY + 0.024;
     group.add(sigilRing, innerSigil);
 
     if (roomType === 'shrine' || roomType === 'boss' || roomType === 'treasure') {
       const centerBeam = new THREE.Mesh(beamGeo, beamMat);
-      centerBeam.position.set(0, 3.1, roomType === 'boss' ? -11.5 : 0);
+      centerBeam.position.set(0, centerFloorY + 3.1, roomType === 'boss' ? -11.5 : 0);
       group.add(centerBeam);
     }
   }
 
-  // Carved fluted rune columns with stepped plinth, capital, glowing crystal cap & contact shadow
+  // Carved fluted rune columns / bridge piers / ruin monoliths aligned to terrain elevation
   const capCrystals: THREE.Mesh[] = [];
   for (const ob of obstacles) {
+    const obY = getRoomGroundY(roomHeightRef, ob.x, ob.z);
     addContactShadow(group, pbr.softShadowTex, ob.x, ob.z, 1.15, 1.15, 0.56);
     const colBase = new THREE.Mesh(colBaseGeo, pbr.stoneTrimMat);
-    colBase.position.set(ob.x, 0.16, ob.z);
+    colBase.position.set(ob.x, obY + 0.16, ob.z);
     colBase.receiveShadow = true;
     addInkEdges(colBase, inkMat, 32);
 
     const col = new THREE.Mesh(colShaftGeo, pbr.cobaltMasonryMat);
-    col.position.set(ob.x, 1.65, ob.z);
+    col.position.set(ob.x, obY + 1.65, ob.z);
     col.castShadow = true;
     col.receiveShadow = true;
     addInkEdges(col, inkMat, 34);
 
     const colCap = new THREE.Mesh(colCapGeo, pbr.stoneTrimMat);
-    colCap.position.set(ob.x, 3.12, ob.z);
+    colCap.position.set(ob.x, obY + 3.12, ob.z);
     addInkEdges(colCap, inkMat, 32);
 
     const band = new THREE.Mesh(colBandGeo, accentGlowMat);
-    band.position.set(ob.x, 1.72, ob.z);
+    band.position.set(ob.x, obY + 1.72, ob.z);
 
     const capBezel = new THREE.Mesh(colBezelGeo, pbr.forgedIronMat);
-    capBezel.position.set(ob.x, 3.31, ob.z);
+    capBezel.position.set(ob.x, obY + 3.31, ob.z);
     addInkEdges(capBezel, inkMat, 32);
 
     const cap = new THREE.Mesh(colOctGeo, crystalJewelMat);
-    cap.position.set(ob.x, 3.64, ob.z);
+    cap.position.set(ob.x, obY + 3.64, ob.z);
+    cap.userData.baseY = obY + 3.64;
     addInkEdges(cap, inkMat, 36);
     capCrystals.push(cap);
     group.add(colBase, col, colCap, band, capBezel, cap);
@@ -1646,32 +1753,32 @@ export function buildDungeonWorld(
     group.add(sGroup);
   }
 
-  if (theme.decorKind === 'archive') {
-    // Tall timber archive bookshelves & glowing tome lecterns lining outer walls
+  if (theme.decorKind === 'ice') {
+    // Glacial Ice Caverns: tall frosted sapphire crystal spires & icy plinths
+    const iceSpireGeo = new THREE.ConeGeometry(0.45, 2.45, 6);
     for (let i = 0; i < decorCoords.length; i++) {
       const [dx, dz, rotY] = decorCoords[i];
-      const shelf = new THREE.Group();
-      shelf.position.set(dx, 0, dz);
-      shelf.rotation.y = rotY;
-      const frame = new THREE.Mesh(shelfFrameGeo, pbr.woodDarkMat);
-      frame.position.y = 1.38;
-      frame.castShadow = true;
-      addInkEdges(frame, inkMat, 32);
-      shelf.add(frame);
-      for (let tier = 0; tier < 3; tier++) {
-        const books = new THREE.Mesh(
-          shelfBooksGeo,
-          tier === 1 ? accentGlowMat : pbr.woodMat,
-        );
-        books.position.set(0, 0.62 + tier * 0.72, 0.1);
-        shelf.add(books);
-      }
-      group.add(shelf);
+      const ig = new THREE.Group();
+      ig.position.set(dx, 0, dz);
+      ig.rotation.y = rotY;
+      const baseRock = new THREE.Mesh(cornerRockGeo, pbr.cobaltMasonryMat);
+      baseRock.scale.set(1.55, 0.72, 1.35);
+      baseRock.position.y = 0.22;
+      const spireA = new THREE.Mesh(iceSpireGeo, crystalJewelMat);
+      spireA.position.set(-0.22, 1.32, 0);
+      spireA.rotation.z = 0.14;
+      addInkEdges(spireA, inkMat, 36);
+      const spireB = new THREE.Mesh(iceSpireGeo, accentGlowMat);
+      spireB.scale.set(0.68, 0.74, 0.68);
+      spireB.position.set(0.28, 1.0, 0.12);
+      spireB.rotation.z = -0.22;
+      ig.add(baseRock, spireA, spireB);
+      group.add(ig);
     }
-    addDungeonBrazier(-half + 3.2, -half + 3.2, pbr.tealGlowMat);
-    addDungeonBrazier(half - 3.2, half - 3.2, pbr.tealGlowMat);
-  } else if (theme.decorKind === 'armory' || theme.decorKind === 'citadel') {
-    // Blazing corner iron braziers + weapon/banner monoliths along perimeter
+    addDungeonBrazier(-half + 3.0, -half + 3.0, pbr.tealGlowMat);
+    addDungeonBrazier(half - 3.0, half - 3.0, pbr.tealGlowMat);
+  } else if (theme.decorKind === 'fire' || theme.decorKind === 'citadel') {
+    // Molten Volcanic / Citadel Hall: blazing corner iron braziers + obsidian war monoliths
     const bOff = half - 2.6;
     const fMat = theme.decorKind === 'citadel' ? pbr.crimsonGlowMat : pbr.emberGlowMat;
     addDungeonBrazier(-bOff, -bOff, fMat);
@@ -1688,14 +1795,32 @@ export function buildDungeonWorld(
       addInkEdges(pil, inkMat, 32);
       const banner = new THREE.Mesh(
         rackBannerGeo,
-        theme.decorKind === 'citadel' ? pbr.crimsonGlowMat : pbr.runnerClothMat,
+        theme.decorKind === 'citadel' ? pbr.crimsonGlowMat : pbr.emberGlowMat,
       );
       banner.position.set(0, 1.75, 0.42);
       rack.add(pil, banner);
       group.add(rack);
     }
-  } else if (theme.decorKind === 'garden') {
-    // Mossy stone archway piers & instanced glowing mushroom clusters
+  } else if (theme.decorKind === 'vault') {
+    // Gilded banners & ornate treasury plinths along walls
+    for (const [dx, dz, rotY] of decorCoords) {
+      const shrineBox = new THREE.Group();
+      shrineBox.position.set(dx, 0, dz);
+      shrineBox.rotation.y = rotY;
+      const ped = new THREE.Mesh(vaultPedGeo, pbr.stoneTrimMat);
+      ped.position.y = 0.36;
+      addInkEdges(ped, inkMat, 32);
+      const ingot = new THREE.Mesh(vaultIngotGeo, pbr.goldMat);
+      ingot.position.y = 1.05;
+      ingot.userData.baseY = 1.05;
+      capCrystals.push(ingot);
+      shrineBox.add(ped, ingot);
+      group.add(shrineBox);
+    }
+    addDungeonBrazier(-half + 2.8, -half + 2.8, pbr.emberGlowMat);
+    addDungeonBrazier(half - 2.8, half - 2.8, pbr.emberGlowMat);
+  } else {
+    // Overgrown Ancient Ruins: mossy broken pillars, bookshelves & glowing spore caps
     const mushSpots: { x: number; y: number; z: number; scale: number; rotY: number; color: string }[] = [];
     for (let i = 0; i < 20; i++) {
       const ang = (i / 20) * Math.PI * 2;
@@ -1710,29 +1835,34 @@ export function buildDungeonWorld(
       });
     }
     addInstancedScatter(group, new THREE.ConeGeometry(0.24, 0.34, 7), accentGlowMat, mushSpots);
+    for (let i = 0; i < decorCoords.length; i++) {
+      const [dx, dz, rotY] = decorCoords[i];
+      const ruinGrp = new THREE.Group();
+      ruinGrp.position.set(dx, 0, dz);
+      ruinGrp.rotation.y = rotY;
+      if (i % 2 === 0) {
+        const frame = new THREE.Mesh(shelfFrameGeo, pbr.woodDarkMat);
+        frame.position.y = 1.38;
+        frame.castShadow = true;
+        addInkEdges(frame, inkMat, 32);
+        const mossCap = new THREE.Mesh(shelfBooksGeo, pbr.mossMat);
+        mossCap.position.set(0, 2.75, 0);
+        ruinGrp.add(frame, mossCap);
+      } else {
+        const brokenDrum = new THREE.Mesh(colShaftGeo, pbr.stoneTrimMat);
+        brokenDrum.scale.set(0.85, 0.56, 0.85);
+        brokenDrum.position.y = 0.8;
+        brokenDrum.rotation.z = 0.12;
+        addInkEdges(brokenDrum, inkMat, 32);
+        const mossTop = new THREE.Mesh(colCapGeo, pbr.mossMat);
+        mossTop.scale.set(0.8, 0.45, 0.8);
+        mossTop.position.y = 1.62;
+        ruinGrp.add(brokenDrum, mossTop);
+      }
+      group.add(ruinGrp);
+    }
     addDungeonBrazier(-half + 3.0, -half + 3.0, pbr.tealGlowMat);
     addDungeonBrazier(half - 3.0, -half + 3.0, pbr.tealGlowMat);
-  } else if (theme.decorKind === 'vault') {
-    // Gilded banners & ornate treasury plinths along walls
-    for (const [dx, dz, rotY] of decorCoords) {
-      const shrineBox = new THREE.Group();
-      shrineBox.position.set(dx, 0, dz);
-      shrineBox.rotation.y = rotY;
-      const ped = new THREE.Mesh(vaultPedGeo, pbr.stoneTrimMat);
-      ped.position.y = 0.36;
-      addInkEdges(ped, inkMat, 32);
-      const ingot = new THREE.Mesh(vaultIngotGeo, pbr.goldMat);
-      ingot.position.y = 1.05;
-      capCrystals.push(ingot);
-      shrineBox.add(ped, ingot);
-      group.add(shrineBox);
-    }
-    addDungeonBrazier(-half + 2.8, -half + 2.8, pbr.emberGlowMat);
-    addDungeonBrazier(half - 2.8, half - 2.8, pbr.emberGlowMat);
-  } else {
-    // Sanctum start room: warm entry braziers & banners
-    addDungeonBrazier(-3.6, half - 2.6, pbr.tealGlowMat);
-    addDungeonBrazier(3.6, half - 2.6, pbr.tealGlowMat);
   }
 
   // Perimeter Threshold Door Archways (N / S / E / W) with iron sconces & portcullis teeth
@@ -1865,8 +1995,9 @@ export function buildDungeonWorld(
   const trapRingGeo = new THREE.RingGeometry(0.62, 0.92, 20);
   const trapRings: { ring: THREE.Mesh; mat: THREE.MeshBasicMaterial }[] = [];
   for (const tp of trapPositions) {
+    const ty = getRoomGroundY(roomHeightRef, tp.x, tp.z);
     const pad = new THREE.Mesh(trapPadGeo, pbr.cobaltMasonryMat);
-    pad.position.set(tp.x, 0.04, tp.z);
+    pad.position.set(tp.x, ty + 0.04, tp.z);
     addInkEdges(pad, inkMat, 32);
     const ringMat = new THREE.MeshBasicMaterial({
       color: '#38E8D8',
@@ -1878,7 +2009,7 @@ export function buildDungeonWorld(
     });
     const ring = new THREE.Mesh(trapRingGeo, ringMat);
     ring.rotation.x = -Math.PI / 2;
-    ring.position.set(tp.x, 0.09, tp.z);
+    ring.position.set(tp.x, ty + 0.09, tp.z);
     group.add(pad, ring);
     trapRings.push({ ring, mat: ringMat });
   }
@@ -1888,7 +2019,8 @@ export function buildDungeonWorld(
   let altarHalo: THREE.Mesh | null = null;
   if (hasAltar) {
     const altarGroup = new THREE.Group();
-    altarGroup.position.set(0, 0, -5.6);
+    const altarY = getRoomGroundY(roomHeightRef, 0, -5.6);
+    altarGroup.position.set(0, altarY, -5.6);
     addContactShadow(altarGroup, pbr.softShadowTex, 0, 0, 1.35, 1.35, 0.55);
     const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.76, 1.02, 0.92, 8), pbr.cobaltMasonryMat);
     plinth.position.y = 0.46;
@@ -1925,9 +2057,9 @@ export function buildDungeonWorld(
     clearcoatRoughness: 0.35,
   });
   const crystalMat = new THREE.MeshPhysicalMaterial({
-    color: '#56F2E2',
-    emissive: '#22D3EE',
-    emissiveIntensity: 1.85,
+    color: '#22DFD0',
+    emissive: '#10A89C',
+    emissiveIntensity: 1.15,
     roughness: 0.14,
     metalness: 0.3,
     clearcoat: 1.0,
@@ -1941,7 +2073,8 @@ export function buildDungeonWorld(
   const destructibleGroups: THREE.Group[] = [];
   for (const dp of destructiblePositions) {
     const dg = new THREE.Group();
-    dg.position.set(dp.x, 0, dp.z);
+    const dpY = getRoomGroundY(roomHeightRef, dp.x, dp.z);
+    dg.position.set(dp.x, dpY, dp.z);
     addContactShadow(dg, pbr.softShadowTex, 0, 0, 0.46, 0.46, 0.48);
     if (dp.kind === 'urn') {
       const pot = new THREE.Mesh(urnGeo, urnMat);
@@ -1969,7 +2102,7 @@ export function buildDungeonWorld(
   const violetMat = new THREE.MeshPhysicalMaterial({
     color: '#7C3AED',
     emissive: '#5B21B6',
-    emissiveIntensity: 1.05,
+    emissiveIntensity: 0.78,
     roughness: 0.28,
     metalness: 0.35,
     clearcoat: 0.65,
@@ -1982,7 +2115,8 @@ export function buildDungeonWorld(
   const chestLids: THREE.Group[] = [];
   for (const ch of chestPositions) {
     const chestGroup = new THREE.Group();
-    chestGroup.position.set(ch.x, 0, ch.z);
+    const chY = getRoomGroundY(roomHeightRef, ch.x, ch.z);
+    chestGroup.position.set(ch.x, chY, ch.z);
     addContactShadow(chestGroup, pbr.softShadowTex, 0, 0, 0.82, 0.65, 0.55);
 
     const bodyMat = ch.isSecret ? violetMat : pbr.woodMat;
@@ -2016,7 +2150,7 @@ export function buildDungeonWorld(
   let portalMat: THREE.MeshBasicMaterial | null = null;
   if (hasExitPortal) {
     const exitGroup = new THREE.Group();
-    exitGroup.position.set(0, 0, -11.5);
+    exitGroup.position.set(0, getRoomGroundY(roomHeightRef, 0, -11.5), -11.5);
     addContactShadow(exitGroup, pbr.softShadowTex, 0, 0, 2.2, 2.2, 0.55);
     const dais = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.15, 0.24, 16), pbr.cobaltMasonryMat);
     dais.position.y = 0.12;
@@ -2042,12 +2176,33 @@ export function buildDungeonWorld(
   const dungeonSmoke = createSmokeEmitterSystem(smokeOrigins, smokeTex, '#9EB4DA', 6, 2.5, 0.72);
   if (dungeonSmoke) group.add(dungeonSmoke.points);
 
+  // Distance LOD culling list for corner crystal clusters & perimeter ink outlines
+  const dungeonLodEntries: { obj: THREE.Object3D; x: number; z: number; maxDistSq: number }[] = [];
+  for (const cg of clusters) {
+    cg.traverse((child) => {
+      if (child instanceof THREE.LineSegments) {
+        dungeonLodEntries.push({
+          obj: child,
+          x: cg.position.x,
+          z: cg.position.z,
+          maxDistSq: 27 * 27,
+        });
+      }
+    });
+  }
+
   return {
     group,
     themeLighting: theme.lighting,
     update(elapsed, exitPortalOpen, chestsOpened, camX = 0, camZ = 0, extra) {
       parallax.update(elapsed, camX, camZ);
       dungeonSmoke?.update(elapsed);
+      for (let i = 0; i < dungeonLodEntries.length; i++) {
+        const entry = dungeonLodEntries[i];
+        const dx = entry.x - camX;
+        const dz = entry.z - camZ;
+        entry.obj.visible = dx * dx + dz * dz <= entry.maxDistSq;
+      }
       for (let i = 0; i < roomFlames.length; i++) {
         roomFlames[i].scale.set(
           0.85 + Math.sin(elapsed * 8 + i) * 0.1,
@@ -2078,8 +2233,9 @@ export function buildDungeonWorld(
         dv.gateBars.visible = !roomCleared;
       }
       for (let i = 0; i < capCrystals.length; i++) {
+        const baseY = typeof capCrystals[i].userData.baseY === 'number' ? capCrystals[i].userData.baseY : 3.6;
         capCrystals[i].rotation.y = elapsed * 1.4 + i;
-        capCrystals[i].position.y = 3.6 + Math.sin(elapsed * 2.5 + i) * 0.08;
+        capCrystals[i].position.y = baseY + Math.sin(elapsed * 2.5 + i) * 0.08;
       }
       for (let i = 0; i < clusters.length; i++) {
         clusters[i].scale.y = 1 + Math.sin(elapsed * 2.2 + i) * 0.05;

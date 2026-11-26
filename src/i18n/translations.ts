@@ -387,6 +387,10 @@ export type TranslationKey =
   | 'ability_aegis_ward_desc'
   | 'ability_frost_nova_name'
   | 'ability_frost_nova_desc'
+  | 'ability_blink_strike_name'
+  | 'ability_blink_strike_desc'
+  | 'ability_meteor_call_name'
+  | 'ability_meteor_call_desc'
   | 'hud_mana'
   | 'hud_dodge'
   | 'hud_block'
@@ -414,6 +418,8 @@ export type TranslationKey =
   | 'kb_ability4'
   | 'kb_ability5'
   | 'kb_ability6'
+  | 'kb_ability7'
+  | 'kb_ability8'
   | 'kb_heal'
   | 'kb_interact'
   | 'kb_bag'
@@ -780,6 +786,10 @@ const EN: TranslationDict = {
   ability_aegis_ward_desc: 'Absorbs 2 incoming hits and triggers a knockback ward pulse.',
   ability_frost_nova_name: 'Frost Nova',
   ability_frost_nova_desc: 'Radial shatter wave that chills, stuns, and clears projectiles.',
+  ability_blink_strike_name: 'Arcane Shadowstep',
+  ability_blink_strike_desc: 'Warp forward with invulnerability and unleash a stunning lightning shockwave.',
+  ability_meteor_call_name: 'Solar Cataclysm',
+  ability_meteor_call_desc: 'Call down a blazing meteor ahead that burns, stuns, and shatters targets.',
   hud_mana: 'Mana',
   hud_dodge: 'Dodge',
   hud_block: 'Guard',
@@ -807,6 +817,8 @@ const EN: TranslationDict = {
   kb_ability4: '4 · Ignis Flame',
   kb_ability5: '5 · Runic Aegis',
   kb_ability6: '6 · Frost Nova',
+  kb_ability7: '7 · Arcane Shadowstep',
+  kb_ability8: '8 · Solar Cataclysm',
   kb_heal: 'Healing Potion',
   kb_interact: 'Interact / Enter',
   kb_bag: 'Open Pack',
@@ -3281,6 +3293,10 @@ const TRANSLATIONS: Record<LanguageCode, TranslationDict> = {
     ability_aegis_ward_desc: 'Поглощает 2 удара и отбрасывает врагов защитной волной.',
     ability_frost_nova_name: 'Кольцо холода',
     ability_frost_nova_desc: 'Ледяная волна вокруг героя: замораживает, оглушает и гасит снаряды.',
+    ability_blink_strike_name: 'Теневой скачок',
+    ability_blink_strike_desc: 'Мгновенный рывок сквозь тень с неуязвимостью и грозовым разрядом при появлении.',
+    ability_meteor_call_name: 'Метеоритный удар',
+    ability_meteor_call_desc: 'Обрушивает пылающий метеорит вперёд: поджигает, оглушает и дробит замороженных врагов.',
     hud_mana: 'Мана',
     hud_dodge: 'Рывок',
     hud_block: 'Блок',
@@ -3308,6 +3324,8 @@ const TRANSLATIONS: Record<LanguageCode, TranslationDict> = {
     kb_ability4: '4 · Пламя Игни',
     kb_ability5: '5 · Рунный щит',
     kb_ability6: '6 · Кольцо холода',
+    kb_ability7: '7 · Теневой скачок',
+    kb_ability8: '8 · Метеоритный удар',
     kb_heal: 'Зелье лечения',
     kb_interact: 'Взаимодействие',
     kb_bag: 'Открыть рюкзак',

@@ -33,6 +33,8 @@ export type KeybindAction =
   | 'ability4'
   | 'ability5'
   | 'ability6'
+  | 'ability7'
+  | 'ability8'
   | 'heal'
   | 'interact'
   | 'bag'
@@ -54,6 +56,8 @@ export const KEYBIND_ACTIONS: KeybindAction[] = [
   'ability4',
   'ability5',
   'ability6',
+  'ability7',
+  'ability8',
   'heal',
   'interact',
   'bag',
@@ -74,6 +78,8 @@ export const DEFAULT_KEYBINDS: KeybindMap = {
   ability4: 'Digit4',
   ability5: 'Digit5',
   ability6: 'Digit6',
+  ability7: 'Digit7',
+  ability8: 'Digit8',
   heal: 'KeyR',
   interact: 'KeyE',
   bag: 'KeyB',

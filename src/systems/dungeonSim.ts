@@ -20,6 +20,9 @@ export type EnemyKind = 'slime' | 'sentinel' | 'caster' | 'boss' | 'marauder';
 export type FloorAnomalyId = 'none' | 'blood_moon' | 'mirror_echo' | 'low_gravity';
 export type DoorDir = 'N' | 'S' | 'E' | 'W';
 export type RoomType = 'start' | 'combat' | 'treasure' | 'shrine' | 'boss';
+export type RoomBiomeTag = 'ice' | 'fire' | 'ruins';
+export type RoomLayoutKind = 'pillars' | 'bridge' | 'terraced' | 'open';
+export type AttackPhase = 'idle' | 'windup' | 'hit' | 'recovery';
 export type InteractSpotId =
   | 'gate'
   | 'rift'
@@ -283,6 +286,8 @@ export interface SimEvents {
   abilityCast?: AbilityId | null;
   ignisCone?: { x: number; z: number; facing: number; range: number; angleDeg: number } | null;
   frostNova?: { x: number; z: number; radius: number } | null;
+  blinkStrike?: { x1: number; z1: number; x2: number; z2: number } | null;
+  meteorImpact?: { x: number; z: number; radius: number } | null;
   aegisBurst?: boolean;
   enemyHit: boolean;
   enemyKilled: boolean;
@@ -341,6 +346,8 @@ export interface DungeonRoomState {
   gx: number;
   gy: number;
   type: RoomType;
+  biome: RoomBiomeTag;
+  layoutKind: RoomLayoutKind;
   doors: DoorDir[];
   neighbors: Partial<Record<DoorDir, string>>;
   visited: boolean;
@@ -401,6 +408,11 @@ export interface WorldSimState {
     lastStepHalf: number;
     jumpTimer: number;
     jumpCooldown: number;
+    jumpHeight: number;
+    gravityScale: number;
+    coyoteTimer: number;
+    jumpBufferTimer: number;
+    jumpSquatTimer: number;
     jumpCharges: number;
     maxJumpCharges: number;
     jumpRechargeTimer: number;
@@ -415,7 +427,11 @@ export interface WorldSimState {
     aegisShieldTimer: number;
     invulnTimer: number;
     attackCooldown: number;
+    attackMaxCooldown: number;
     attackAnimTimer: number;
+    attackPhase: AttackPhase;
+    attackPhaseTimer: number;
+    attackPhaseTotal: number;
     comboStep: number;
     comboResetTimer: number;
     specialCooldown: number;
@@ -544,6 +560,11 @@ export function createCourtyardSim(
       lastStepHalf: 0,
       jumpTimer: 0,
       jumpCooldown: 0,
+      jumpHeight: 1.15,
+      gravityScale: 1.0,
+      coyoteTimer: 0,
+      jumpBufferTimer: 0,
+      jumpSquatTimer: 0,
       jumpCharges: mergedMods.maxJumpCharges,
       maxJumpCharges: mergedMods.maxJumpCharges,
       jumpRechargeTimer: 0,
@@ -558,7 +579,11 @@ export function createCourtyardSim(
       aegisShieldTimer: 0,
       invulnTimer: 0,
       attackCooldown: 0,
+      attackMaxCooldown: 0,
       attackAnimTimer: 0,
+      attackPhase: 'idle',
+      attackPhaseTimer: 0,
+      attackPhaseTotal: 0,
       comboStep: 0,
       comboResetTimer: 0,
       specialCooldown: 0,
@@ -756,6 +781,40 @@ export const DOOR_POSITIONS: Record<DoorDir, { x: number; z: number; spawnX: num
   E: { x: 19.3, z: 0, spawnX: 16.4, spawnZ: 0, facing: -Math.PI / 2 },
   W: { x: -19.3, z: 0, spawnX: -16.4, spawnZ: 0, facing: Math.PI / 2 },
 };
+
+export function getRoomGroundY(
+  room: Pick<DungeonRoomState, 'biome' | 'layoutKind'> | null | undefined,
+  x: number,
+  z: number,
+): number {
+  if (!room) return 0;
+  const ax = Math.abs(x);
+  const az = Math.abs(z);
+  if (room.layoutKind === 'terraced') {
+    const outer = Math.max(ax, az);
+    if (outer <= 5.4) return 0.54;
+    if (outer < 7.0) return 0.54 * (1 - (outer - 5.4) / 1.6);
+    return 0;
+  }
+  if (room.layoutKind === 'bridge') {
+    // Keep door thresholds flat so entry/exit stays seamless
+    if (az >= 13.8 || ax >= 13.8) {
+      if (az >= 15.2) return 0;
+      const blend = Math.max(0, Math.min(1, (15.2 - az) / 1.4));
+      if (ax <= 3.6) return 0.36 * blend;
+      if (ax < 5.0) return (0.36 - 0.54 * ((ax - 3.6) / 1.4)) * blend;
+      if (ax < 11.2) return -0.18 * blend;
+      if (ax < 12.6) return -0.18 * (1 - (ax - 11.2) / 1.4) * blend;
+      return 0;
+    }
+    if (ax <= 3.6) return 0.36;
+    if (ax < 5.0) return 0.36 - 0.54 * ((ax - 3.6) / 1.4);
+    if (ax < 11.2) return -0.18;
+    if (ax < 12.6) return -0.18 * (1 - (ax - 11.2) / 1.4);
+    return 0;
+  }
+  return 0;
+}
 
 export interface CameraRelativeMoveResult {
   mx: number;
@@ -1030,7 +1089,9 @@ export function generateDungeonFloorMap(
 
   const rooms: Record<string, DungeonRoomState> = {};
   const roomOrder: string[] = [];
-  const kinds: EnemyKind[] = ['slime', 'sentinel', 'caster'];
+  const allBiomes: RoomBiomeTag[] = ['ice', 'fire', 'ruins'];
+  const allLayouts: RoomLayoutKind[] = ['bridge', 'terraced', 'pillars', 'open'];
+  const assignedBiomes: RoomBiomeTag[] = [];
 
   for (let idx = 0; idx < nodes.length; idx++) {
     const node = nodes[idx];
@@ -1045,6 +1106,36 @@ export function generateDungeonFloorMap(
               ? 'shrine'
               : 'combat';
 
+    // Strict biome generation rule: never more than 2 identical biome rooms in a row
+    const prev1 = idx >= 1 ? assignedBiomes[idx - 1] : null;
+    const prev2 = idx >= 2 ? assignedBiomes[idx - 2] : null;
+    const forbiddenBiome = prev1 && prev1 === prev2 ? prev1 : null;
+    const preferredBiome: RoomBiomeTag =
+      type === 'boss'
+        ? 'fire'
+        : type === 'shrine'
+          ? 'ruins'
+          : type === 'treasure'
+            ? 'ice'
+            : allBiomes[(idx + week + floor + Math.floor(rand() * 3)) % allBiomes.length];
+    let biome: RoomBiomeTag = preferredBiome;
+    if (biome === forbiddenBiome) {
+      const candidates = allBiomes.filter((b) => b !== forbiddenBiome);
+      biome = candidates[(idx + Math.floor(rand() * candidates.length)) % candidates.length];
+    }
+    assignedBiomes.push(biome);
+
+    const layoutKind: RoomLayoutKind =
+      type === 'start'
+        ? 'open'
+        : type === 'boss'
+          ? 'pillars'
+          : type === 'shrine'
+            ? 'terraced'
+            : type === 'treasure'
+              ? 'bridge'
+              : allLayouts[(idx + floor) % allLayouts.length];
+
     const roomDoors = (Object.keys(node.neighbors) as DoorDir[]);
 
     const obstacles: ObstacleDef[] =
@@ -1055,17 +1146,35 @@ export function generateDungeonFloorMap(
             { id: `${node.id}_col_sw`, x: -10.4, z: 8.2, radius: 0.95 },
             { id: `${node.id}_col_se`, x: 10.4, z: 8.2, radius: 0.95 },
           ]
-        : type === 'combat' && idx % 2 === 1
-          ? [
-              { id: `${node.id}_ob_l`, x: -7.2, z: 0, radius: 1.0 },
-              { id: `${node.id}_ob_r`, x: 7.2, z: 0, radius: 1.0 },
-            ]
-          : [
-              { id: `${node.id}_col_nw`, x: -8.2, z: -6.4, radius: 0.95 },
-              { id: `${node.id}_col_ne`, x: 8.2, z: -6.4, radius: 0.95 },
-              { id: `${node.id}_col_sw`, x: -8.2, z: 6.4, radius: 0.95 },
-              { id: `${node.id}_col_se`, x: 8.2, z: 6.4, radius: 0.95 },
-            ];
+        : layoutKind === 'open'
+          ? []
+          : layoutKind === 'bridge'
+            ? [
+                { id: `${node.id}_br_nw`, x: -4.2, z: -6.4, radius: 0.88 },
+                { id: `${node.id}_br_ne`, x: 4.2, z: -6.4, radius: 0.88 },
+                { id: `${node.id}_br_sw`, x: -4.2, z: 6.4, radius: 0.88 },
+                { id: `${node.id}_br_se`, x: 4.2, z: 6.4, radius: 0.88 },
+              ]
+            : layoutKind === 'terraced'
+              ? [
+                  { id: `${node.id}_tr_nw`, x: -8.4, z: -8.4, radius: 0.95 },
+                  { id: `${node.id}_tr_ne`, x: 8.4, z: -8.4, radius: 0.95 },
+                  { id: `${node.id}_tr_sw`, x: -8.4, z: 8.4, radius: 0.95 },
+                  { id: `${node.id}_tr_se`, x: 8.4, z: 8.4, radius: 0.95 },
+                ]
+              : [
+                  { id: `${node.id}_col_nw`, x: -8.2, z: -6.4, radius: 0.95 },
+                  { id: `${node.id}_col_ne`, x: 8.2, z: -6.4, radius: 0.95 },
+                  { id: `${node.id}_col_sw`, x: -8.2, z: 6.4, radius: 0.95 },
+                  { id: `${node.id}_col_se`, x: 8.2, z: 6.4, radius: 0.95 },
+                ];
+
+    const biomeEnemyKinds: EnemyKind[] =
+      biome === 'ice'
+        ? ['caster', 'slime', 'caster', 'sentinel']
+        : biome === 'fire'
+          ? ['sentinel', 'slime', 'sentinel', 'caster']
+          : ['slime', 'sentinel', 'caster', 'slime'];
 
     const enemies: EnemyEntity[] = [];
     const endlessHp = getEndlessScale(week);
@@ -1085,7 +1194,7 @@ export function generateDungeonFloorMap(
         [10.8, -2.5],
       ];
       for (let i = 0; i < 3; i++) {
-        const knd = kinds[i % kinds.length];
+        const knd = biomeEnemyKinds[i % biomeEnemyKinds.length];
         const [sx, sz] = startCoords[i];
         enemies.push(
           createEnemyInstance(
@@ -1150,7 +1259,12 @@ export function generateDungeonFloorMap(
         week >= 2 ||
         mergedMods.pactEnemyHpMult > 1 ||
         mergedMods.pactEnemySpeedMult > 1;
-      const affixes: EliteAffix[] = ['volatile', 'swift', 'bulwark'];
+      const affixes: EliteAffix[] =
+        biome === 'fire'
+          ? ['volatile', 'bulwark', 'swift']
+          : biome === 'ice'
+            ? ['swift', 'bulwark', 'volatile']
+            : ['bulwark', 'swift', 'volatile'];
       const roomAffix = affixes[(idx + floor + week) % affixes.length];
       if (type === 'treasure') {
         enemies.push(
@@ -1173,7 +1287,7 @@ export function generateDungeonFloorMap(
         );
       } else if (type === 'shrine') {
         enemies.push(
-          createEnemyInstance(`${node.id}_e_0`, 'sentinel', 0, -3.6, week, floor, difficulty, bloodSpeedMult, rand, false, hpScale, spdScale),
+          createEnemyInstance(`${node.id}_e_0`, biome === 'ice' ? 'caster' : 'sentinel', 0, -3.6, week, floor, difficulty, bloodSpeedMult, rand, false, hpScale, spdScale),
         );
       } else {
         const cnt = mode === 'rift' ? 4 : 3 + (floor >= 2 ? 1 : 0);
@@ -1188,7 +1302,7 @@ export function generateDungeonFloorMap(
           enemies.push(
             createEnemyInstance(
               `${node.id}_e_${i}`,
-              kinds[(i + idx) % kinds.length],
+              biomeEnemyKinds[(i + idx) % biomeEnemyKinds.length],
               cx + (rand() - 0.5) * 0.6,
               cz + (rand() - 0.5) * 0.6,
               week,
@@ -1204,6 +1318,10 @@ export function generateDungeonFloorMap(
           );
         }
       }
+    }
+
+    for (let i = 0; i < enemies.length; i++) {
+      enemies[i].y = getRoomGroundY({ biome, layoutKind }, enemies[i].x, enemies[i].z);
     }
 
     const chests: ChestEntity[] = [];
@@ -1243,7 +1361,7 @@ export function generateDungeonFloorMap(
             { id: `${node.id}_d4`, kind: 'crystal', x: 11.2, z: 13.4, broken: false },
           ]
         : [
-            { id: `${node.id}_d1`, kind: 'urn', x: -13.2, z: -10.2, broken: false },
+            { id: `${node.id}_d1`, kind: biome === 'ice' ? 'crystal' : 'urn', x: -13.2, z: -10.2, broken: false },
             { id: `${node.id}_d2`, kind: 'crystal', x: 13.2, z: 10.2, broken: false },
           ];
 
@@ -1267,7 +1385,7 @@ export function generateDungeonFloorMap(
       pickups.push({
         id: uid,
         x: 0,
-        y: 0.35,
+        y: getRoomGroundY({ biome, layoutKind }, 0, 10.2) + 0.35,
         z: 10.2,
         item: createRelicInstance(sampleRelic, uid, false),
         age: 0,
@@ -1279,6 +1397,8 @@ export function generateDungeonFloorMap(
       gx: node.gx,
       gy: node.gy,
       type,
+      biome,
+      layoutKind,
       doors: roomDoors,
       neighbors: node.neighbors,
       visited: mergedMods.revealMap || node.id === startNode.id,
@@ -1352,11 +1472,17 @@ export function transitionDungeonRoom(
   sim.roomEntryX = entry.spawnX;
   sim.roomEntryZ = entry.spawnZ;
   sim.player.x = entry.spawnX;
-  sim.player.y = 0;
+  sim.player.y = getRoomGroundY(nextRoom, entry.spawnX, entry.spawnZ);
   sim.player.z = entry.spawnZ;
   sim.player.vx = 0;
+  sim.player.vy = 0;
   sim.player.vz = 0;
   sim.player.facing = entry.facing;
+  sim.player.coyoteTimer = 0.14;
+  sim.player.jumpBufferTimer = 0;
+  sim.player.attackPhase = 'idle';
+  sim.player.attackPhaseTimer = 0;
+  sim.player.attackPhaseTotal = 0;
   sim.player.invulnTimer = 0.65;
   sim.doorTransitionCooldown = 0.65;
   initializeRoomEnemyAggro(sim.enemies, entry.spawnX, entry.spawnZ, sim.arenaHalfExtent);
@@ -1419,13 +1545,18 @@ export function enterDungeonFloor(
       hp: Math.min(prev.player.maxHp, prev.player.hp + descendHeal),
       mana: prev.player.maxMana,
       x: entryX,
-      y: 0,
+      y: getRoomGroundY(startRoom, entryX, entryZ),
       z: entryZ,
       vx: 0,
       vy: 0,
       vz: 0,
       facing: Math.PI,
       jumpTimer: 0,
+      jumpHeight: 1.15,
+      gravityScale: 1.0,
+      coyoteTimer: 0.14,
+      jumpBufferTimer: 0,
+      jumpSquatTimer: 0,
       jumpCharges: mergedMods.maxJumpCharges,
       maxJumpCharges: mergedMods.maxJumpCharges,
       jumpRechargeTimer: 0,
@@ -1439,6 +1570,10 @@ export function enterDungeonFloor(
       aegisShieldHits: 0,
       aegisShieldTimer: 0,
       attackCooldown: 0,
+      attackMaxCooldown: 0,
+      attackPhase: 'idle',
+      attackPhaseTimer: 0,
+      attackPhaseTotal: 0,
       specialCooldown: 0,
       abilityCooldowns: createInitialAbilityCooldowns(),
       activeAbilityId: null,
@@ -1577,6 +1712,8 @@ export function stepWorldSim(
   out.abilityCast = null;
   out.ignisCone = null;
   out.frostNova = null;
+  out.blinkStrike = null;
+  out.meteorImpact = null;
   out.aegisBurst = false;
   if (out.impactPoints) out.impactPoints.length = 0;
   else out.impactPoints = [];
@@ -1623,7 +1760,17 @@ export function stepWorldSim(
   } else {
     p.mana = Math.min(p.maxMana, p.mana + 7.5 * dt);
   }
+  const activeRoomForHeight =
+    sim.zone === 'dungeon' && sim.floorMap ? sim.floorMap.rooms[sim.currentRoomId] : null;
+  const currentGroundY = getRoomGroundY(activeRoomForHeight, p.x, p.z);
   p.jumpCooldown = Math.max(0, p.jumpCooldown - dt);
+  p.jumpSquatTimer = Math.max(0, p.jumpSquatTimer - dt);
+  p.jumpBufferTimer = Math.max(0, p.jumpBufferTimer - dt);
+  if (p.y <= currentGroundY + 0.045 && p.vy <= 0.15) {
+    p.coyoteTimer = 0.14;
+  } else {
+    p.coyoteTimer = Math.max(0, p.coyoteTimer - dt);
+  }
   if (p.jumpCharges < p.maxJumpCharges) {
     p.jumpRechargeTimer -= dt;
     if (p.jumpRechargeTimer <= 0) {
@@ -1653,6 +1800,24 @@ export function stepWorldSim(
   p.invulnTimer = Math.max(0, p.invulnTimer - dt);
   p.attackCooldown = Math.max(0, p.attackCooldown - dt);
   p.attackAnimTimer = Math.max(0, p.attackAnimTimer - dt);
+  if (p.attackPhase !== 'idle') {
+    p.attackPhaseTimer -= dt;
+    if (p.attackPhaseTimer <= 0) {
+      if (p.attackPhase === 'windup') {
+        p.attackPhase = 'hit';
+        p.attackPhaseTotal = 0.11;
+        p.attackPhaseTimer = 0.11;
+      } else if (p.attackPhase === 'hit') {
+        p.attackPhase = 'recovery';
+        p.attackPhaseTotal = 0.14;
+        p.attackPhaseTimer = 0.14;
+      } else {
+        p.attackPhase = 'idle';
+        p.attackPhaseTotal = 0;
+        p.attackPhaseTimer = 0;
+      }
+    }
+  }
   p.comboResetTimer = Math.max(0, p.comboResetTimer - dt);
   p.specialCooldown = Math.max(0, p.specialCooldown - dt);
   p.specialAnimTimer = Math.max(0, p.specialAnimTimer - dt);
@@ -1792,7 +1957,7 @@ export function stepWorldSim(
       p.dodgeTimer <= 0 &&
       p.specialAnimTimer <= 0 &&
       p.attackAnimTimer <= 0 &&
-      p.y <= 0.12;
+      p.y <= currentGroundY + 0.14;
     if (p.blocking && input.aimDirX !== null && input.aimDirZ !== null && !input.steerWithCamera) {
       p.facing = Math.atan2(input.aimDirX, input.aimDirZ);
     }
@@ -1800,17 +1965,27 @@ export function stepWorldSim(
     p.blocking = false;
   }
 
-  // Heroic Vertical Jump / Vault (Space)
+  // Heroic Vertical Jump / Vault (Space) with JumpHeight, GravityScale, Coyote Time & Jump Buffer
+  if (input.jumpPressed) {
+    p.jumpBufferTimer = 0.14;
+  }
+  const hasGroundOrCoyote = p.y <= currentGroundY + 0.045 || p.coyoteTimer > 0;
   const canJump =
-    p.jumpCharges > 0 && p.jumpTimer <= 0 && (p.maxJumpCharges > 1 || p.jumpCooldown <= 0);
-  if (input.jumpPressed && canJump && p.dodgeTimer <= 0) {
+    p.jumpCharges > 0 &&
+    p.jumpTimer <= 0 &&
+    (p.maxJumpCharges > 1 || (p.jumpCooldown <= 0 && hasGroundOrCoyote));
+  if (p.jumpBufferTimer > 0 && canJump && p.dodgeTimer <= 0) {
+    p.jumpBufferTimer = 0;
+    p.coyoteTimer = 0;
+    p.jumpSquatTimer = 0.06;
     p.jumpCharges -= 1;
     p.jumpRechargeTimer = 0.75 * sim.mods.jumpCooldownMult;
     p.jumpTimer = 0.34;
     p.jumpCooldown = 0.52 * sim.mods.jumpCooldownMult;
     p.blocking = false;
     p.invulnTimer = Math.max(p.invulnTimer, 0.34);
-    p.vy = 7.4 * (lowGrav ? 1.25 : 1.0);
+    const effectiveGravity = 26.0 * p.gravityScale * (lowGrav ? 0.75 : 1.0);
+    p.vy = Math.sqrt(2 * effectiveGravity * p.jumpHeight * (lowGrav ? 1.25 : 1.0));
     let dx = mx;
     let dz = mz;
     if (dx !== 0 || dz !== 0) {
@@ -1828,8 +2003,8 @@ export function stepWorldSim(
       p.vx *= 0.45;
       p.vz *= 0.45;
     }
-    p.squashX = 0.82;
-    p.squashY = 1.24;
+    p.squashX = 0.78;
+    p.squashY = 1.28;
     out.jumped = true;
 
     if (sim.zone === 'dungeon' && boonFx.emberVault) {
@@ -1872,20 +2047,22 @@ export function stepWorldSim(
     }
   }
 
-  // Vertical jump & Aerial Meteor Plunge Slam physics
-  if (p.y > 0 || p.vy > 0) {
-    p.vy -= (lowGrav ? 19.5 : 26.0) * dt;
+  // Vertical jump, platform elevation & Aerial Meteor Plunge Slam physics
+  if (p.y > currentGroundY + 0.005 || p.vy > 0) {
+    const effectiveGravity = 26.0 * p.gravityScale * (lowGrav ? 0.75 : 1.0);
+    p.vy -= effectiveGravity * dt;
     p.y += p.vy * dt;
-    if (p.y <= 0) {
-      p.y = 0;
+    if (p.y <= currentGroundY) {
+      p.y = currentGroundY;
       p.vy = 0;
-      p.squashX = p.slamPending ? 1.38 : 1.2;
-      p.squashY = p.slamPending ? 0.68 : 0.82;
+      p.squashX = p.slamPending ? 1.4 : 1.26;
+      p.squashY = p.slamPending ? 0.66 : 0.76;
       if (p.slamPending) {
         p.slamPending = false;
         p.attackKind = 'slam';
         p.specialAnimTimer = 0.28;
-        p.attackCooldown = 0.22;
+        p.attackCooldown = 0.32;
+        p.attackMaxCooldown = 0.32;
         out.slamLanded = true;
         sim.trauma = Math.min(1, sim.trauma + 0.52);
         sim.hitstopTimer = 0.095;
@@ -1941,6 +2118,9 @@ export function stepWorldSim(
         }
       }
     }
+  } else if (p.y < currentGroundY) {
+    // Stepping up ramps/terraces tracks smooth terrain elevation
+    p.y += Math.min(currentGroundY - p.y, 6.5 * dt);
   }
 
   if (p.dodgeTimer > 0) {
@@ -1972,8 +2152,9 @@ export function stepWorldSim(
   pushOutFromObstacles(p, 0.5, sim.obstacles, limit);
   const moved = Math.hypot(p.x - prevX, p.z - prevZ);
   sim.distanceMoved += moved;
+  const postGroundY = sim.zone === 'dungeon' ? getRoomGroundY(activeRoomForHeight, p.x, p.z) : 0;
 
-  if (p.y <= 0.02 && moved > 1e-4) {
+  if (p.y <= postGroundY + 0.03 && moved > 1e-4) {
     p.walkPhase += moved * 4.6;
     const half = Math.floor(p.walkPhase / Math.PI);
     if (half !== p.lastStepHalf) {
@@ -1983,8 +2164,17 @@ export function stepWorldSim(
   }
 
   const relax = 1 - Math.exp(-13 * dt);
-  p.squashX += (1 - p.squashX) * relax;
-  p.squashY += (1 - p.squashY) * relax;
+  if (p.y > postGroundY + 0.05) {
+    // Dynamic vertical-velocity Squash & Stretch in flight
+    const airStretch = Math.min(0.28, Math.abs(p.vy) * 0.026);
+    const targetY = 1 + airStretch;
+    const targetX = 1 / Math.sqrt(targetY);
+    p.squashX += (targetX - p.squashX) * relax;
+    p.squashY += (targetY - p.squashY) * relax;
+  } else {
+    p.squashX += (1 - p.squashX) * relax;
+    p.squashY += (1 - p.squashY) * relax;
+  }
 
   let applyIncomingPlayerHit!: (
     dmg: number,
@@ -2656,6 +2846,9 @@ export function stepWorldSim(
         dropRelicFromKill(e, appraisal);
       }
     }
+    if (out.enemyHit) {
+      sim.hitstopTimer = Math.max(sim.hitstopTimer, 0.05);
+    }
     if (riposteConsumed) {
       p.counterTimer = 0;
     }
@@ -2704,7 +2897,8 @@ export function stepWorldSim(
 
     if (abilityId === 'whirlwind') {
       p.specialAnimTimer = 0.34;
-      p.attackCooldown = 0.28;
+      p.attackCooldown = Math.max(p.attackCooldown, 0.28);
+      p.attackMaxCooldown = p.attackCooldown;
       p.attackKind = 'special';
       p.squashX = 1.24;
       p.squashY = 0.82;
@@ -2743,6 +2937,8 @@ export function stepWorldSim(
       p.vz = lz * 14.2;
       p.jumpTimer = 0.36;
       p.invulnTimer = Math.max(p.invulnTimer, 0.45);
+      p.attackCooldown = Math.max(p.attackCooldown, 0.24);
+      p.attackMaxCooldown = p.attackCooldown;
       p.slamPending = true;
       p.attackKind = 'slam';
       p.squashX = 0.78;
@@ -2754,7 +2950,8 @@ export function stepWorldSim(
 
     if (abilityId === 'blade_volley') {
       p.attackAnimTimer = 0.28;
-      p.attackCooldown = 0.25;
+      p.attackCooldown = Math.max(p.attackCooldown, 0.26);
+      p.attackMaxCooldown = p.attackCooldown;
       p.comboStep = 2;
       p.squashX = 1.18;
       p.squashY = 0.86;
@@ -2788,7 +2985,8 @@ export function stepWorldSim(
       const minDot = Math.cos((36 * Math.PI) / 180);
       const dmg = Math.max(28, Math.round(weapon.damage * 1.35 * effectiveSkillMult));
       p.attackAnimTimer = 0.24;
-      p.attackCooldown = 0.24;
+      p.attackCooldown = Math.max(p.attackCooldown, 0.25);
+      p.attackMaxCooldown = p.attackCooldown;
       p.squashX = 1.16;
       p.squashY = 0.88;
       sim.trauma = Math.min(1, sim.trauma + 0.36);
@@ -2858,6 +3056,8 @@ export function stepWorldSim(
       p.aegisShieldHits = 2;
       p.aegisShieldTimer = 7.5;
       p.invulnTimer = Math.max(p.invulnTimer, 0.38);
+      p.attackCooldown = Math.max(p.attackCooldown, 0.22);
+      p.attackMaxCooldown = p.attackCooldown;
       p.squashX = 1.2;
       p.squashY = 0.85;
       out.aegisBurst = true;
@@ -2902,9 +3102,174 @@ export function stepWorldSim(
       return true;
     }
 
+    if (abilityId === 'blink_strike') {
+      const prevX = p.x;
+      const prevZ = p.z;
+      const blinkDist = 4.8;
+      const dest = {
+        x: Math.max(-limit, Math.min(limit, p.x + dirX * blinkDist)),
+        z: Math.max(-limit, Math.min(limit, p.z + dirZ * blinkDist)),
+      };
+      pushOutFromObstacles(dest, 0.45, sim.obstacles, limit);
+      p.x = dest.x;
+      p.z = dest.z;
+      p.vx = dirX * 4.2;
+      p.vz = dirZ * 4.2;
+      p.invulnTimer = Math.max(p.invulnTimer, 0.38);
+      p.attackAnimTimer = 0.24;
+      p.attackCooldown = Math.max(p.attackCooldown, 0.24);
+      p.attackMaxCooldown = p.attackCooldown;
+      p.squashX = 1.24;
+      p.squashY = 0.82;
+      sim.trauma = Math.min(1, sim.trauma + 0.34);
+      out.blinkStrike = { x1: prevX, z1: prevZ, x2: p.x, z2: p.z };
+
+      const strikeR = 3.6;
+      const shockDmg = Math.max(26, Math.round(weapon.damage * 1.32 * effectiveSkillMult));
+      for (const destProp of sim.destructibles) {
+        if (!destProp.broken && Math.hypot(destProp.x - p.x, destProp.z - p.z) <= strikeR) {
+          destProp.broken = true;
+          out.propsSmashed = (out.propsSmashed ?? 0) + 1;
+          out.smashedProps?.push({ x: destProp.x, z: destProp.z, kind: destProp.kind });
+          sim.propsSmashedTotal += 1;
+        }
+      }
+      for (let pi = sim.projectiles.length - 1; pi >= 0; pi--) {
+        if (!sim.projectiles[pi].deflected && Math.hypot(sim.projectiles[pi].x - p.x, sim.projectiles[pi].z - p.z) <= 2.8) {
+          sim.projectiles.splice(pi, 1);
+        }
+      }
+      let arcCount = 0;
+      for (const e of sim.enemies) {
+        if (e.state === 'ko') continue;
+        const edx = e.x - p.x;
+        const edz = e.z - p.z;
+        const ed = Math.hypot(edx, edz);
+        if (ed <= strikeR + e.radius) {
+          const hasReaction = (e.slowTimer ?? 0) > 0 || (e.burnTimer ?? 0) > 0;
+          const bonusDmg = hasReaction ? Math.round(weapon.damage * 0.65 * effectiveSkillMult) : 0;
+          if (hasReaction) {
+            out.elementalReactions?.push({ x: e.x, z: e.z, kind: 'superconduct' });
+          }
+          e.hp -= shockDmg + bonusDmg;
+          e.hitFlashTimer = 0.16;
+          e.state = 'stunned';
+          e.stateTimer = Math.max(e.stateTimer, 0.65);
+          wakeEnemy(e);
+          out.enemyHit = true;
+          p.comboStreak = Math.min(99, (p.comboStreak || 0) + 1);
+          p.comboStreakTimer = 3.6;
+          if (arcCount < 4) {
+            arcCount += 1;
+            out.lightningArcs?.push({
+              x1: prevX,
+              y1: 0.95,
+              z1: prevZ,
+              x2: e.x,
+              y2: 0.9,
+              z2: e.z,
+            });
+          }
+          out.impactPoints?.push({ x: e.x, y: 0.95, z: e.z, color: '#38BDF8', heavy: true });
+          out.hitPopups?.push({
+            x: e.x,
+            y: 1.5,
+            z: e.z,
+            text: hasReaction ? `⚡ SUPERCONDUCT -${shockDmg + bonusDmg}` : `⚡ -${shockDmg}`,
+            color: hasReaction ? '#F4B942' : '#38BDF8',
+            crit: true,
+            kind: 'appraisal',
+          });
+          if (e.hp <= 0) {
+            e.hp = 0;
+            e.state = 'ko';
+            e.koTimer = 0.42;
+            dropRelicFromKill(e, false);
+          }
+        }
+      }
+      return true;
+    }
+
+    if (abilityId === 'meteor_call') {
+      const tx = Math.max(-limit, Math.min(limit, p.x + dirX * 3.4));
+      const tz = Math.max(-limit, Math.min(limit, p.z + dirZ * 3.4));
+      const meteorR = 4.4;
+      const meteorDmg = Math.max(42, Math.round(weapon.damage * 2.05 * effectiveSkillMult));
+      p.specialAnimTimer = 0.34;
+      p.attackCooldown = Math.max(p.attackCooldown, 0.28);
+      p.attackMaxCooldown = p.attackCooldown;
+      p.squashX = 1.28;
+      p.squashY = 0.78;
+      sim.trauma = Math.min(1, sim.trauma + 0.48);
+      sim.hitstopTimer = 0.09;
+      out.meteorImpact = { x: tx, z: tz, radius: meteorR };
+
+      for (const destProp of sim.destructibles) {
+        if (!destProp.broken && Math.hypot(destProp.x - tx, destProp.z - tz) <= meteorR) {
+          destProp.broken = true;
+          out.propsSmashed = (out.propsSmashed ?? 0) + 1;
+          out.smashedProps?.push({ x: destProp.x, z: destProp.z, kind: destProp.kind });
+          sim.propsSmashedTotal += 1;
+        }
+      }
+      for (let pi = sim.projectiles.length - 1; pi >= 0; pi--) {
+        if (!sim.projectiles[pi].deflected && Math.hypot(sim.projectiles[pi].x - tx, sim.projectiles[pi].z - tz) <= meteorR) {
+          sim.projectiles.splice(pi, 1);
+        }
+      }
+      for (const e of sim.enemies) {
+        if (e.state === 'ko') continue;
+        const edx = e.x - tx;
+        const edz = e.z - tz;
+        const ed = Math.hypot(edx, edz);
+        if (ed <= meteorR + e.radius) {
+          const hadFrost = (e.slowTimer ?? 0) > 0;
+          const shatterDmg = hadFrost ? Math.round(weapon.damage * 1.45 * effectiveSkillMult) : 0;
+          if (hadFrost) {
+            e.slowTimer = 0;
+            out.elementalReactions?.push({ x: e.x, z: e.z, kind: 'shatter' });
+          }
+          e.hp -= meteorDmg + shatterDmg;
+          e.hitFlashTimer = 0.2;
+          e.burnTimer = 4.2;
+          e.burnTickTimer = 0.45;
+          e.state = 'stunned';
+          e.stateTimer = Math.max(e.stateTimer, hadFrost ? 1.25 : 0.95);
+          wakeEnemy(e);
+          if (ed > 0.05) {
+            e.vx += (edx / ed) * 7.2;
+            e.vz += (edz / ed) * 7.2;
+          }
+          out.enemyHit = true;
+          p.comboStreak = Math.min(99, (p.comboStreak || 0) + 1);
+          p.comboStreakTimer = 3.6;
+          out.impactPoints?.push({ x: e.x, y: 1.0, z: e.z, color: '#FB923C', heavy: true });
+          out.hitPopups?.push({
+            x: e.x,
+            y: 1.65,
+            z: e.z,
+            text: hadFrost ? `☄ SHATTER! -${meteorDmg + shatterDmg}` : `☄ -${meteorDmg}`,
+            color: hadFrost ? '#F4B942' : '#FB923C',
+            crit: true,
+            kind: 'appraisal',
+          });
+          if (e.hp <= 0) {
+            e.hp = 0;
+            e.state = 'ko';
+            e.koTimer = 0.42;
+            dropRelicFromKill(e, false);
+          }
+        }
+      }
+      return true;
+    }
+
     // frost_nova
     const novaR = 5.4;
     const frostDmg = Math.max(26, Math.round(weapon.damage * 1.25 * effectiveSkillMult));
+    p.attackCooldown = Math.max(p.attackCooldown, 0.24);
+    p.attackMaxCooldown = p.attackCooldown;
     p.squashX = 1.25;
     p.squashY = 0.8;
     sim.trauma = Math.min(1, sim.trauma + 0.4);
@@ -2972,24 +3337,36 @@ export function stepWorldSim(
     } else if (input.attackReleased && p.chargeReady && p.attackCooldown <= 0) {
       p.chargeTimer = 0;
       p.chargeReady = false;
-      p.attackCooldown = Math.max(0.28, weapon.cooldown * 1.1);
+      const chargedCd = Math.max(0.55, weapon.cooldown * 1.45);
+      p.attackCooldown = chargedCd;
+      p.attackMaxCooldown = chargedCd;
       p.specialAnimTimer = 0.34;
+      p.attackPhase = 'hit';
+      p.attackPhaseTotal = 0.14;
+      p.attackPhaseTimer = 0.14;
       p.attackKind = 'charged';
       p.squashX = 1.26;
       p.squashY = 0.8;
       out.chargedStrike = true;
       out.swungCombo = 2;
       performStrike(false, true);
-    } else if (input.attackPressed && p.y > 0.45 && !p.slamPending) {
+    } else if (input.attackPressed && p.y > postGroundY + 0.45 && !p.slamPending) {
       p.slamPending = true;
       p.attackKind = 'slam';
+      p.attackPhase = 'windup';
+      p.attackPhaseTotal = 0.12;
+      p.attackPhaseTimer = 0.12;
       p.vy = Math.min(p.vy, -17.5);
       p.squashX = 0.78;
       p.squashY = 1.26;
       out.swungCombo = 2;
     } else if (input.attackPressed && p.attackCooldown <= 0) {
       p.attackCooldown = weapon.cooldown;
-      p.attackAnimTimer = p.comboStep === 2 ? 0.3 : 0.22;
+      p.attackMaxCooldown = weapon.cooldown;
+      p.attackAnimTimer = p.comboStep === 2 ? 0.34 : 0.28;
+      p.attackPhase = 'windup';
+      p.attackPhaseTotal = 0.085;
+      p.attackPhaseTimer = 0.085;
       p.comboResetTimer = 0.88;
       p.attackKind = 'combo';
       p.squashX = p.comboStep === 2 ? 1.22 : 1.1;
@@ -3435,6 +3812,7 @@ export function stepWorldSim(
       e.x += e.vx * dt;
       e.z += e.vz * dt;
       pushOutFromObstacles(e, e.radius, sim.obstacles, limit);
+      e.y = getRoomGroundY(curRoom, e.x, e.z);
     }
 
     if (livingNonMarauder === 0) {
@@ -3608,8 +3986,9 @@ export function stepWorldSim(
       if (pk.vy !== undefined) {
         pk.vy -= 14.5 * dt;
         pk.y += pk.vy * dt;
-        if (pk.y <= 0.36) {
-          pk.y = 0.36;
+        const pkGround = getRoomGroundY(curRoom, pk.x, pk.z) + 0.36;
+        if (pk.y <= pkGround) {
+          pk.y = pkGround;
           if (Math.abs(pk.vy) > 1.2) {
             pk.vy = Math.abs(pk.vy) * 0.42;
           } else {

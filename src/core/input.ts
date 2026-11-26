@@ -18,7 +18,9 @@ export type VirtualAction =
   | 'ability3'
   | 'ability4'
   | 'ability5'
-  | 'ability6';
+  | 'ability6'
+  | 'ability7'
+  | 'ability8';
 
 export interface OrbitDeltaState {
   dx: number;

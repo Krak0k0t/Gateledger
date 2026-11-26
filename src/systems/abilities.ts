@@ -6,7 +6,9 @@ export type AbilityId =
   | 'blade_volley'
   | 'ignis_cone'
   | 'aegis_ward'
-  | 'frost_nova';
+  | 'frost_nova'
+  | 'blink_strike'
+  | 'meteor_call';
 
 export type AbilityCategory = 'physical' | 'magic';
 
@@ -16,11 +18,13 @@ export type AbilityActionKey =
   | 'ability3'
   | 'ability4'
   | 'ability5'
-  | 'ability6';
+  | 'ability6'
+  | 'ability7'
+  | 'ability8';
 
 export interface AbilityDef {
   id: AbilityId;
-  slot: 1 | 2 | 3 | 4 | 5 | 6;
+  slot: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
   actionKey: AbilityActionKey;
   category: AbilityCategory;
   cooldown: number;
@@ -104,6 +108,30 @@ export const HERO_ABILITIES: AbilityDef[] = [
     nameKey: 'ability_frost_nova_name',
     descKey: 'ability_frost_nova_desc',
   },
+  {
+    id: 'blink_strike',
+    slot: 7,
+    actionKey: 'ability7',
+    category: 'magic',
+    cooldown: 6.5,
+    manaCost: 25,
+    accent: '#38BDF8',
+    glowRgba: 'rgba(56, 189, 248, 0.5)',
+    nameKey: 'ability_blink_strike_name',
+    descKey: 'ability_blink_strike_desc',
+  },
+  {
+    id: 'meteor_call',
+    slot: 8,
+    actionKey: 'ability8',
+    category: 'magic',
+    cooldown: 10.5,
+    manaCost: 45,
+    accent: '#FB923C',
+    glowRgba: 'rgba(251, 146, 60, 0.55)',
+    nameKey: 'ability_meteor_call_name',
+    descKey: 'ability_meteor_call_desc',
+  },
 ];
 
 export const ABILITY_ORDER: AbilityId[] = HERO_ABILITIES.map((a) => a.id);
@@ -115,6 +143,8 @@ export const ABILITY_MAP: Record<AbilityId, AbilityDef> = {
   ignis_cone: HERO_ABILITIES[3],
   aegis_ward: HERO_ABILITIES[4],
   frost_nova: HERO_ABILITIES[5],
+  blink_strike: HERO_ABILITIES[6],
+  meteor_call: HERO_ABILITIES[7],
 };
 
 export function createInitialAbilityCooldowns(): Record<AbilityId, number> {
@@ -125,6 +155,8 @@ export function createInitialAbilityCooldowns(): Record<AbilityId, number> {
     ignis_cone: 0,
     aegis_ward: 0,
     frost_nova: 0,
+    blink_strike: 0,
+    meteor_call: 0,
   };
 }
 
