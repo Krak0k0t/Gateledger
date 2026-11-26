@@ -570,6 +570,7 @@ export function createMetalTextureSet(
   highlightHex: string,
   maxAniso: number,
   repeat = 2,
+  engravedFiligree = false,
 ): PbrTextureSet {
   const size = 256;
   const albedoC = document.createElement('canvas');
@@ -581,7 +582,7 @@ export function createMetalTextureSet(
   const actx = albedoC.getContext('2d')!;
   const bctx = bumpC.getContext('2d')!;
   const rctx = roughC.getContext('2d')!;
-  const rnd = makeRng(8842);
+  const rnd = makeRng(engravedFiligree ? 9127 : 8842);
 
   const g = actx.createLinearGradient(0, 0, size, size);
   g.addColorStop(0, baseHex);
@@ -592,8 +593,58 @@ export function createMetalTextureSet(
 
   bctx.fillStyle = '#888888';
   bctx.fillRect(0, 0, size, size);
-  rctx.fillStyle = '#525252';
+  rctx.fillStyle = engravedFiligree ? '#444444' : '#525252';
   rctx.fillRect(0, 0, size, size);
+
+  // Subtle folded Damascus / hammered specular grain ripples
+  if (engravedFiligree) {
+    for (let w = 0; w < 22; w++) {
+      const yBase = (w / 22) * size;
+      actx.strokeStyle = w % 2 === 0 ? 'rgba(255,255,255,0.06)' : 'rgba(12,16,28,0.09)';
+      actx.lineWidth = 1.6;
+      bctx.strokeStyle = w % 2 === 0 ? 'rgba(182,182,182,0.18)' : 'rgba(98,98,98,0.18)';
+      bctx.lineWidth = 1.8;
+      rctx.strokeStyle = w % 2 === 0 ? 'rgba(54,54,54,0.32)' : 'rgba(104,104,104,0.28)';
+      rctx.lineWidth = 1.6;
+
+      actx.beginPath();
+      bctx.beginPath();
+      rctx.beginPath();
+      for (let x = 0; x <= size; x += 16) {
+        const dy = Math.sin((x / size) * Math.PI * 4 + w * 0.7) * 5.5;
+        if (x === 0) {
+          actx.moveTo(x, yBase + dy);
+          bctx.moveTo(x, yBase + dy);
+          rctx.moveTo(x, yBase + dy);
+        } else {
+          actx.lineTo(x, yBase + dy);
+          bctx.lineTo(x, yBase + dy);
+          rctx.lineTo(x, yBase + dy);
+        }
+      }
+      actx.stroke();
+      bctx.stroke();
+      rctx.stroke();
+    }
+
+    // Subtle engraved geometric border scrollwork for hero plate trim
+    bctx.strokeStyle = 'rgba(42,42,42,0.42)';
+    bctx.lineWidth = 1.3;
+    rctx.strokeStyle = 'rgba(142,142,142,0.42)';
+    rctx.lineWidth = 1.3;
+    for (const rowY of [18, size - 18]) {
+      bctx.beginPath();
+      rctx.beginPath();
+      for (let x = 0; x < size; x += 24) {
+        bctx.moveTo(x + 2, rowY);
+        bctx.arc(x + 12, rowY, 6, 0, Math.PI, x % 48 === 0);
+        rctx.moveTo(x + 2, rowY);
+        rctx.arc(x + 12, rowY, 6, 0, Math.PI, x % 48 === 0);
+      }
+      bctx.stroke();
+      rctx.stroke();
+    }
+  }
 
   // Directional brushed grain
   for (let i = 0; i < 240; i++) {
@@ -601,20 +652,20 @@ export function createMetalTextureSet(
     const y = rnd() * size;
     const len = 14 + rnd() * 44;
     const bright = rnd() > 0.4;
-    actx.strokeStyle = bright ? 'rgba(255,255,255,0.08)' : 'rgba(10,12,20,0.12)';
+    actx.strokeStyle = bright ? 'rgba(255,255,255,0.09)' : 'rgba(10,12,20,0.13)';
     actx.lineWidth = 1;
     actx.beginPath();
     actx.moveTo(x, y);
     actx.lineTo(x + len, y + (rnd() - 0.5) * 4);
     actx.stroke();
 
-    bctx.strokeStyle = bright ? 'rgba(200,200,200,0.22)' : 'rgba(70,70,70,0.26)';
+    bctx.strokeStyle = bright ? 'rgba(206,206,206,0.24)' : 'rgba(66,66,66,0.28)';
     bctx.beginPath();
     bctx.moveTo(x, y);
     bctx.lineTo(x + len, y + (rnd() - 0.5) * 4);
     bctx.stroke();
 
-    rctx.strokeStyle = bright ? 'rgba(130,130,130,0.3)' : 'rgba(55,55,55,0.25)';
+    rctx.strokeStyle = bright ? 'rgba(128,128,128,0.32)' : 'rgba(44,44,44,0.28)';
     rctx.beginPath();
     rctx.moveTo(x, y);
     rctx.lineTo(x + len, y + (rnd() - 0.5) * 4);
@@ -622,15 +673,16 @@ export function createMetalTextureSet(
   }
 
   // Crisp combat wear micro-scratches & cross-gouges across armor & weapons
-  for (let i = 0; i < 95; i++) {
+  const scratchCount = engravedFiligree ? 125 : 95;
+  for (let i = 0; i < scratchCount; i++) {
     const x = rnd() * size;
     const y = rnd() * size;
-    const ang = (rnd() - 0.5) * 2.4;
-    const len = 7 + rnd() * 24;
+    const ang = (rnd() - 0.5) * 2.5;
+    const len = 7 + rnd() * 26;
     const ex = x + Math.cos(ang) * len;
     const ey = y + Math.sin(ang) * len;
 
-    actx.strokeStyle = rnd() > 0.35 ? 'rgba(255,255,255,0.16)' : 'rgba(6,8,14,0.24)';
+    actx.strokeStyle = rnd() > 0.35 ? 'rgba(255,255,255,0.2)' : 'rgba(6,8,14,0.26)';
     actx.lineWidth = 0.75 + rnd() * 0.7;
     actx.beginPath();
     actx.moveTo(x, y);
@@ -638,21 +690,21 @@ export function createMetalTextureSet(
     actx.stroke();
 
     // Recessed scratch trough + bright displaced ridge beside it
-    bctx.strokeStyle = 'rgba(28,28,28,0.65)';
-    bctx.lineWidth = 1.05;
+    bctx.strokeStyle = 'rgba(22,22,22,0.72)';
+    bctx.lineWidth = 1.1;
     bctx.beginPath();
     bctx.moveTo(x, y);
     bctx.lineTo(ex, ey);
     bctx.stroke();
 
-    bctx.strokeStyle = 'rgba(232,232,232,0.38)';
-    bctx.lineWidth = 0.7;
+    bctx.strokeStyle = 'rgba(238,238,238,0.44)';
+    bctx.lineWidth = 0.75;
     bctx.beginPath();
-    bctx.moveTo(x + 0.8, y + 0.8);
-    bctx.lineTo(ex + 0.8, ey + 0.8);
+    bctx.moveTo(x + 0.85, y + 0.85);
+    bctx.lineTo(ex + 0.85, ey + 0.85);
     bctx.stroke();
 
-    rctx.strokeStyle = 'rgba(185,185,185,0.45)';
+    rctx.strokeStyle = 'rgba(202,202,202,0.5)';
     rctx.lineWidth = 1.1;
     rctx.beginPath();
     rctx.moveTo(x, y);
@@ -663,7 +715,7 @@ export function createMetalTextureSet(
   return {
     map: configureTexture(albedoC, true, maxAniso, repeat, repeat),
     bumpMap: configureTexture(bumpC, false, maxAniso, repeat, repeat),
-    normalMap: createNormalMapFromBumpCanvas(bumpC, 1.9, maxAniso, repeat, repeat),
+    normalMap: createNormalMapFromBumpCanvas(bumpC, engravedFiligree ? 2.25 : 1.9, maxAniso, repeat, repeat),
     roughnessMap: configureTexture(roughC, false, maxAniso, repeat, repeat),
   };
 }
@@ -1429,12 +1481,12 @@ export function createHeroMaterialTextures(maxAniso = 4): HeroMaterialTextures {
 
   const textures: HeroMaterialTextures = {
     leather: createHeroLeatherTextureSet(key),
-    steel: trackSet(createMetalTextureSet('#9AA8BF', '#F0F5FF', key, 2)),
-    darkSteel: trackSet(createMetalTextureSet('#2A3348', '#526282', key, 2)),
+    steel: trackSet(createMetalTextureSet('#A2B2CA', '#F5F8FF', key, 2, true)),
+    darkSteel: trackSet(createMetalTextureSet('#2A354B', '#586A8E', key, 2, true)),
     velvet: trackSet(createClothTextureSet('#9D2F27', '#6E1813', key, 3)),
     clothBlue: trackSet(createClothTextureSet('#24396B', 'rgba(255,244,220,0.09)', key, 3)),
     gambeson: createHeroGambesonTextureSet(key),
-    gold: trackSet(createMetalTextureSet('#D49622', '#FFE89E', key, 2)),
+    gold: trackSet(createMetalTextureSet('#DA9C24', '#FFEBA6', key, 2, true)),
     skinBump: skin.bump,
     skinNormal: skin.normal,
   };

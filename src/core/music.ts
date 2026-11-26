@@ -1,81 +1,106 @@
 export type MusicTheme = 'courtyard_day' | 'shop_haggle' | 'dungeon_explore' | 'dungeon_boss';
 
-interface NoteStep {
-  bass: number | null;
-  arp: number | null;
-  lead: number | null;
+export type SoundtrackTrackId =
+  | 'gold'
+  | 'gilded_throne'
+  | 'ancient_slavic_shadows'
+  | 'leshy'
+  | 'last_stand';
+
+export interface SoundtrackTrack {
+  id: SoundtrackTrackId;
+  fileName: string;
+  src: string;
+  titleKey:
+    | 'track_gold_title'
+    | 'track_gilded_throne_title'
+    | 'track_slavic_shadows_title'
+    | 'track_leshy_title'
+    | 'track_last_stand_title';
+  moodKey:
+    | 'track_mood_courtyard'
+    | 'track_mood_shop'
+    | 'track_mood_ruins'
+    | 'track_mood_wilds'
+    | 'track_mood_boss';
+  themeAffinity: MusicTheme;
 }
 
-const SCALES: Record<MusicTheme, { tempoMs: number; steps: NoteStep[] }> = {
-  courtyard_day: {
-    tempoMs: 360,
-    steps: [
-      { bass: 146.83, arp: 293.66, lead: 587.33 },
-      { bass: null, arp: 349.23, lead: null },
-      { bass: null, arp: 440.0, lead: 659.25 },
-      { bass: null, arp: 523.25, lead: null },
-      { bass: 130.81, arp: 261.63, lead: 523.25 },
-      { bass: null, arp: 329.63, lead: null },
-      { bass: null, arp: 392.0, lead: 440.0 },
-      { bass: null, arp: 493.88, lead: null },
-      { bass: 116.54, arp: 233.08, lead: 466.16 },
-      { bass: null, arp: 293.66, lead: null },
-      { bass: null, arp: 349.23, lead: 523.25 },
-      { bass: null, arp: 440.0, lead: 587.33 },
-      { bass: 130.81, arp: 261.63, lead: 523.25 },
-      { bass: null, arp: 329.63, lead: 493.88 },
-      { bass: null, arp: 392.0, lead: 440.0 },
-      { bass: null, arp: 440.0, lead: null },
-    ],
+export const SOUNDTRACK_TRACKS: readonly SoundtrackTrack[] = [
+  {
+    id: 'gold',
+    fileName: 'Gold.ogg',
+    src: '/assets/audio/Gold.ogg',
+    titleKey: 'track_gold_title',
+    moodKey: 'track_mood_courtyard',
+    themeAffinity: 'courtyard_day',
   },
-  shop_haggle: {
-    tempoMs: 280,
-    steps: [
-      { bass: 196.0, arp: 392.0, lead: 783.99 },
-      { bass: null, arp: 493.88, lead: null },
-      { bass: null, arp: 587.33, lead: 659.25 },
-      { bass: 164.81, arp: 329.63, lead: 783.99 },
-      { bass: null, arp: 493.88, lead: 880.0 },
-      { bass: null, arp: 587.33, lead: null },
-      { bass: 174.61, arp: 349.23, lead: 698.46 },
-      { bass: null, arp: 440.0, lead: 659.25 },
-      { bass: null, arp: 523.25, lead: 587.33 },
-      { bass: 146.83, arp: 293.66, lead: 587.33 },
-      { bass: null, arp: 392.0, lead: 659.25 },
-      { bass: null, arp: 493.88, lead: null },
-    ],
+  {
+    id: 'gilded_throne',
+    fileName: 'Gilded Throne.ogg',
+    src: '/assets/audio/Gilded%20Throne.ogg',
+    titleKey: 'track_gilded_throne_title',
+    moodKey: 'track_mood_shop',
+    themeAffinity: 'shop_haggle',
   },
-  dungeon_explore: {
-    tempoMs: 410,
-    steps: [
-      { bass: 110.0, arp: 220.0, lead: 659.25 },
-      { bass: null, arp: 261.63, lead: null },
-      { bass: null, arp: 329.63, lead: null },
-      { bass: null, arp: 311.13, lead: 587.33 },
-      { bass: 98.0, arp: 196.0, lead: null },
-      { bass: null, arp: 246.94, lead: 523.25 },
-      { bass: null, arp: 293.66, lead: null },
-      { bass: null, arp: 329.63, lead: 493.88 },
-      { bass: 87.31, arp: 174.61, lead: 440.0 },
-      { bass: null, arp: 220.0, lead: null },
-      { bass: null, arp: 261.63, lead: 523.25 },
-      { bass: null, arp: 329.63, lead: null },
-    ],
+  {
+    id: 'ancient_slavic_shadows',
+    fileName: 'Ancient Slavic Shadows.ogg',
+    src: '/assets/audio/Ancient%20Slavic%20Shadows.ogg',
+    titleKey: 'track_slavic_shadows_title',
+    moodKey: 'track_mood_ruins',
+    themeAffinity: 'dungeon_explore',
   },
-  dungeon_boss: {
-    tempoMs: 195,
-    steps: [
-      { bass: 110.0, arp: 220.0, lead: 659.25 },
-      { bass: 110.0, arp: 261.63, lead: null },
-      { bass: 110.0, arp: 329.63, lead: 698.46 },
-      { bass: null, arp: 261.63, lead: 659.25 },
-      { bass: 103.83, arp: 207.65, lead: 587.33 },
-      { bass: 103.83, arp: 246.94, lead: null },
-      { bass: 98.0, arp: 196.0, lead: 523.25 },
-      { bass: null, arp: 246.94, lead: 587.33 },
-    ],
+  {
+    id: 'leshy',
+    fileName: 'Leshy.ogg',
+    src: '/assets/audio/Leshy.ogg',
+    titleKey: 'track_leshy_title',
+    moodKey: 'track_mood_wilds',
+    themeAffinity: 'dungeon_explore',
   },
-};
+  {
+    id: 'last_stand',
+    fileName: 'Last Stand.ogg',
+    src: '/assets/audio/Last%20Stand.ogg',
+    titleKey: 'track_last_stand_title',
+    moodKey: 'track_mood_boss',
+    themeAffinity: 'dungeon_boss',
+  },
+] as const;
+
+export function getNextCarouselIndex(
+  currentIndex: number,
+  step: 1 | -1,
+  total: number = SOUNDTRACK_TRACKS.length,
+): number {
+  if (total <= 0) return 0;
+  return ((currentIndex + step) % total + total) % total;
+}
+
+export function computeSubduedMusicGain(
+  musicVolume: number,
+  muted: boolean,
+  paused: boolean,
+  lowHpMode: boolean,
+): number {
+  if (muted) return 0;
+  const clamped = Math.min(1, Math.max(0, musicVolume));
+  const baseSubduedCeiling = 0.28; // Always keeps background soundtrack gently subdued
+  const pauseDuck = paused ? 0.45 : 1.0;
+  const lowHpDuck = lowHpMode ? 0.72 : 1.0;
+  return Math.min(1, Math.max(0, clamped * baseSubduedCeiling * pauseDuck * lowHpDuck));
+}
+
+export interface MusicPlayerState {
+  trackIndex: number;
+  track: SoundtrackTrack;
+  isPlaying: boolean;
+  userPaused: boolean;
+  muted: boolean;
+  musicVolume: number;
+  autoplayBlocked: boolean;
+}
 
 export interface DynamicAudioEngine {
   unlock(): void;
@@ -87,6 +112,12 @@ export interface DynamicAudioEngine {
   setPaused(paused: boolean): void;
   setLowHpMode(active: boolean): void;
   setTensionPulse(active: boolean): void;
+  getMusicState(): MusicPlayerState;
+  subscribeMusicState(cb: (state: MusicPlayerState) => void): () => void;
+  nextTrack(): void;
+  prevTrack(): void;
+  selectTrack(idOrIndex: SoundtrackTrackId | number): void;
+  toggleMusicPlayback(): void;
   playStep(rand: number): void;
   playJump(): void;
   playSwing(comboIdx: number): void;
@@ -110,18 +141,145 @@ export interface DynamicAudioEngine {
 export function createDynamicAudioEngine(): DynamicAudioEngine {
   let ctx: AudioContext | null = null;
   let masterGain: GainNode | null = null;
-  let musicGain: GainNode | null = null;
   let sfxGain: GainNode | null = null;
-  let musicFilter: BiquadFilterNode | null = null;
   let muted = false;
-  let musicVol = 0.75;
+  let musicVol = 0.35;
   let sfxVol = 0.85;
   let paused = false;
   let lowHpMode = false;
   let tensionPulse = false;
-  let activeTheme: MusicTheme = 'courtyard_day';
-  let stepIndex = 0;
-  let timerId: number | null = null;
+
+  // Real OGG Carousel BGM Player (replaces synthesized music)
+  let trackIndex = 0;
+  let userPaused = false;
+  let isPlaying = false;
+  let autoplayBlocked = false;
+  let disposed = false;
+  let tensionTimerId: number | null = null;
+  const listeners = new Set<(state: MusicPlayerState) => void>();
+
+  const buildSnapshot = (): MusicPlayerState => ({
+    trackIndex,
+    track: SOUNDTRACK_TRACKS[trackIndex] ?? SOUNDTRACK_TRACKS[0],
+    isPlaying,
+    userPaused,
+    muted,
+    musicVolume: musicVol,
+    autoplayBlocked,
+  });
+
+  const emitMusicState = () => {
+    const snap = buildSnapshot();
+    listeners.forEach((cb) => {
+      try {
+        cb(snap);
+      } catch {
+        // Ignore subscriber UI error
+      }
+    });
+  };
+
+  const bgmAudio: HTMLAudioElement | null =
+    typeof window !== 'undefined' && typeof Audio !== 'undefined' ? new Audio() : null;
+
+  const syncBgmVolume = () => {
+    if (!bgmAudio) return;
+    bgmAudio.volume = computeSubduedMusicGain(musicVol, muted, paused, lowHpMode);
+  };
+
+  const attemptPlayBgm = () => {
+    if (!bgmAudio || disposed || userPaused) return;
+    syncBgmVolume();
+    if (!bgmAudio.src) {
+      bgmAudio.src = SOUNDTRACK_TRACKS[trackIndex].src;
+    }
+    try {
+      const playPromise = bgmAudio.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise
+          .then(() => {
+            if (disposed) return;
+            isPlaying = !bgmAudio.paused;
+            autoplayBlocked = false;
+            emitMusicState();
+          })
+          .catch(() => {
+            if (disposed) return;
+            isPlaying = false;
+            autoplayBlocked = true;
+            emitMusicState();
+          });
+      } else {
+        isPlaying = !bgmAudio.paused;
+        autoplayBlocked = false;
+        emitMusicState();
+      }
+    } catch {
+      isPlaying = false;
+      autoplayBlocked = true;
+      emitMusicState();
+    }
+  };
+
+  const loadAndPlayTrack = (nextIdx: number, forcePlay = false) => {
+    trackIndex = ((nextIdx % SOUNDTRACK_TRACKS.length) + SOUNDTRACK_TRACKS.length) % SOUNDTRACK_TRACKS.length;
+    if (forcePlay) {
+      userPaused = false;
+    }
+    if (!bgmAudio) {
+      emitMusicState();
+      return;
+    }
+    bgmAudio.pause();
+    bgmAudio.src = SOUNDTRACK_TRACKS[trackIndex].src;
+    bgmAudio.currentTime = 0;
+    syncBgmVolume();
+    emitMusicState();
+    if (!userPaused) {
+      attemptPlayBgm();
+    }
+  };
+
+  const onBgmEnded = () => {
+    if (disposed || userPaused) return;
+    loadAndPlayTrack(getNextCarouselIndex(trackIndex, 1), false);
+  };
+
+  const onBgmPlay = () => {
+    isPlaying = true;
+    autoplayBlocked = false;
+    emitMusicState();
+  };
+
+  const onBgmPause = () => {
+    isPlaying = false;
+    emitMusicState();
+  };
+
+  const onFirstInteraction = () => {
+    if (disposed) return;
+    ensureAudio();
+    if (!userPaused && bgmAudio && bgmAudio.paused) {
+      attemptPlayBgm();
+    }
+  };
+
+  if (bgmAudio) {
+    bgmAudio.preload = 'auto';
+    bgmAudio.loop = false; // Handled via carousel 'ended' event
+    bgmAudio.src = SOUNDTRACK_TRACKS[0].src;
+    syncBgmVolume();
+    bgmAudio.addEventListener('ended', onBgmEnded);
+    bgmAudio.addEventListener('play', onBgmPlay);
+    bgmAudio.addEventListener('pause', onBgmPause);
+    // Start softly in background automatically on load
+    attemptPlayBgm();
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pointerdown', onFirstInteraction, { passive: true });
+    window.addEventListener('keydown', onFirstInteraction, { passive: true });
+  }
 
   const ensureAudio = (): AudioContext | null => {
     if (typeof window === 'undefined') return null;
@@ -139,15 +297,6 @@ export function createDynamicAudioEngine(): DynamicAudioEngine {
         sfxGain = ctx.createGain();
         sfxGain.gain.value = sfxVol;
         sfxGain.connect(masterGain);
-
-        musicFilter = ctx.createBiquadFilter();
-        musicFilter.type = 'lowpass';
-        musicFilter.frequency.value = lowHpMode ? 900 : 14000;
-        musicFilter.connect(masterGain);
-
-        musicGain = ctx.createGain();
-        musicGain.gain.value = 0.28 * musicVol;
-        musicGain.connect(musicFilter);
       } catch {
         return null;
       }
@@ -185,84 +334,42 @@ export function createDynamicAudioEngine(): DynamicAudioEngine {
     osc.stop(now + duration + 0.02);
   };
 
-  const scheduleNextBeat = () => {
-    if (timerId !== null) {
-      clearTimeout(timerId);
-    }
-    const pattern = SCALES[activeTheme];
-    const tempoMs =
-      (lowHpMode || tensionPulse) && activeTheme !== 'courtyard_day'
-        ? Math.round(pattern.tempoMs * 0.82)
-        : pattern.tempoMs;
-    timerId = window.setTimeout(() => {
-      if (ctx && ctx.state === 'running' && musicGain && !muted && !paused) {
-        const step = pattern.steps[stepIndex % pattern.steps.length];
-        stepIndex += 1;
-        const durSec = (tempoMs / 1000) * 1.35;
-        if (step.bass) {
-          playVoice(
-            musicGain,
-            step.bass,
-            step.bass,
-            durSec * 1.4,
-            activeTheme === 'dungeon_boss' ? 0.22 : 0.16,
-            activeTheme === 'dungeon_explore' || activeTheme === 'dungeon_boss'
-              ? 'sawtooth'
-              : 'triangle',
-            0.03,
-          );
-        }
-        if (step.arp) {
-          playVoice(
-            musicGain,
-            step.arp,
-            step.arp,
-            durSec * 0.9,
-            0.09,
-            activeTheme === 'shop_haggle' ? 'sine' : 'triangle',
-            0.012,
-          );
-        }
-        if (step.lead) {
-          playVoice(
-            musicGain,
-            step.lead,
-            step.lead,
-            durSec * 1.6,
-            0.08,
-            activeTheme === 'dungeon_boss' ? 'square' : 'sine',
-            0.025,
-          );
-        }
-        // Subtle low-HP or Marauder tension heartbeat pulse on even beats
-        if ((lowHpMode || tensionPulse) && stepIndex % 2 === 0 && sfxGain) {
-          playVoice(sfxGain, tensionPulse ? 88 : 76, 42, 0.15, tensionPulse ? 0.14 : 0.12, 'sine', 0.01);
-        }
+  // Subtle low-HP / Marauder SFX heartbeat cue (SFX channel only, never synthesized music)
+  const scheduleTensionCue = () => {
+    if (disposed) return;
+    tensionTimerId = window.setTimeout(() => {
+      if ((lowHpMode || tensionPulse) && !muted && !paused && sfxGain) {
+        playVoice(sfxGain, tensionPulse ? 88 : 76, 42, 0.14, tensionPulse ? 0.12 : 0.1, 'sine', 0.01);
       }
-      scheduleNextBeat();
-    }, tempoMs);
+      scheduleTensionCue();
+    }, 640);
   };
-
-  scheduleNextBeat();
+  if (typeof window !== 'undefined') {
+    scheduleTensionCue();
+  }
 
   return {
     unlock() {
       ensureAudio();
+      if (!userPaused && bgmAudio && bgmAudio.paused) {
+        attemptPlayBgm();
+      }
     },
     setMuted(next: boolean) {
       muted = next;
       if (masterGain && ctx) {
         masterGain.gain.setValueAtTime(muted ? 0 : 0.8, ctx.currentTime);
       }
+      syncBgmVolume();
+      emitMusicState();
     },
     isMuted() {
       return muted;
     },
     setMusicVolume(vol: number) {
       musicVol = Math.min(1, Math.max(0, vol));
-      if (musicGain && ctx) {
-        musicGain.gain.setTargetAtTime(0.28 * musicVol, ctx.currentTime, 0.05);
-      }
+      syncBgmVolume();
+      emitMusicState();
     },
     setSfxVolume(vol: number) {
       sfxVol = Math.min(1, Math.max(0, vol));
@@ -270,24 +377,58 @@ export function createDynamicAudioEngine(): DynamicAudioEngine {
         sfxGain.gain.setTargetAtTime(sfxVol, ctx.currentTime, 0.05);
       }
     },
-    setTheme(theme: MusicTheme) {
-      if (activeTheme !== theme) {
-        activeTheme = theme;
-        stepIndex = 0;
-      }
+    setTheme(_theme: MusicTheme) {
+      // Carousel mode flows smoothly across the 5 OGG compositions without interrupting active tracks.
+      syncBgmVolume();
     },
     setPaused(p: boolean) {
       paused = p;
+      syncBgmVolume();
     },
     setLowHpMode(active: boolean) {
       if (lowHpMode === active) return;
       lowHpMode = active;
-      if (musicFilter && ctx) {
-        musicFilter.frequency.setTargetAtTime(active ? 920 : 14000, ctx.currentTime, 0.18);
-      }
+      syncBgmVolume();
     },
     setTensionPulse(active: boolean) {
       tensionPulse = active;
+    },
+    getMusicState() {
+      return buildSnapshot();
+    },
+    subscribeMusicState(cb) {
+      listeners.add(cb);
+      cb(buildSnapshot());
+      return () => {
+        listeners.delete(cb);
+      };
+    },
+    nextTrack() {
+      loadAndPlayTrack(getNextCarouselIndex(trackIndex, 1), true);
+    },
+    prevTrack() {
+      loadAndPlayTrack(getNextCarouselIndex(trackIndex, -1), true);
+    },
+    selectTrack(idOrIndex: SoundtrackTrackId | number) {
+      const idx =
+        typeof idOrIndex === 'number'
+          ? idOrIndex
+          : SOUNDTRACK_TRACKS.findIndex((tr) => tr.id === idOrIndex);
+      if (idx >= 0) {
+        loadAndPlayTrack(idx, true);
+      }
+    },
+    toggleMusicPlayback() {
+      if (!bgmAudio) return;
+      if (userPaused || bgmAudio.paused) {
+        userPaused = false;
+        attemptPlayBgm();
+      } else {
+        userPaused = true;
+        bgmAudio.pause();
+        isPlaying = false;
+        emitMusicState();
+      }
     },
     playStep(rand: number) {
       if (!sfxGain) return;
@@ -398,7 +539,20 @@ export function createDynamicAudioEngine(): DynamicAudioEngine {
       }
     },
     dispose() {
-      if (timerId !== null) clearTimeout(timerId);
+      disposed = true;
+      if (tensionTimerId !== null) clearTimeout(tensionTimerId);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pointerdown', onFirstInteraction);
+        window.removeEventListener('keydown', onFirstInteraction);
+      }
+      if (bgmAudio) {
+        bgmAudio.removeEventListener('ended', onBgmEnded);
+        bgmAudio.removeEventListener('play', onBgmPlay);
+        bgmAudio.removeEventListener('pause', onBgmPause);
+        bgmAudio.pause();
+        bgmAudio.src = '';
+      }
+      listeners.clear();
       if (ctx) {
         void ctx.close().catch(() => {});
         ctx = null;

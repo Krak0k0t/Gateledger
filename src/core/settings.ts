@@ -282,7 +282,7 @@ export function getGraphicsProfile(quality: GraphicsQuality): GraphicsProfile {
 
 export function createDefaultSettings(): GameSettings {
   return {
-    musicVolume: 0.75,
+    musicVolume: 0.35,
     sfxVolume: 0.85,
     graphicsQuality: 'ultra',
     showDay1Guide: true,

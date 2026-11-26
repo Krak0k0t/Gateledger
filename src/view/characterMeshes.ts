@@ -531,14 +531,19 @@ export function createArticulatedHero(
     thighStrap.position.y = -0.08;
     legGroup.add(thighStrap);
 
-    // Steel Knee Poleyn + Brass Trim
-    const kneeCap = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), steelMat);
-    kneeCap.scale.set(0.95, 1.05, 0.88);
-    kneeCap.position.set(0, -0.21, 0.038);
+    // Steel Knee Poleyn + Side Shield-Wing + Brass Trim
+    const kneeCap = new THREE.Mesh(new THREE.SphereGeometry(0.072, 12, 10), steelMat);
+    kneeCap.scale.set(0.95, 1.05, 0.9);
+    kneeCap.position.set(0, -0.21, 0.04);
     kneeCap.castShadow = true;
+    kneeCap.receiveShadow = true;
+    const kneeWing = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.095, 0.082), darkSteelMat);
+    kneeWing.position.set(offsetX > 0 ? 0.068 : -0.068, -0.21, 0.018);
+    kneeWing.rotation.z = offsetX > 0 ? -0.22 : 0.22;
+    kneeWing.castShadow = true;
     const kneeRivet = new THREE.Mesh(new THREE.SphereGeometry(0.015, 6, 6), goldMat);
-    kneeRivet.position.set(offsetX > 0 ? 0.048 : -0.048, -0.21, 0.042);
-    legGroup.add(kneeCap, kneeRivet);
+    kneeRivet.position.set(offsetX > 0 ? 0.052 : -0.052, -0.21, 0.045);
+    legGroup.add(kneeCap, kneeWing, kneeRivet);
 
     // Right thigh throwing dagger sheath
     if (offsetX > 0) {
@@ -664,22 +669,57 @@ export function createArticulatedHero(
   gorgetTrim.position.set(0, 0.965, 0.01);
   bodyPivot.add(gorget, gorgetTrim);
 
-  // Heavy Studded Waist Belt + Ornate Buckle + Articulated Brigandine Tassets
+  // Heavy Studded Waist Belt + Ornate Buckle + Articulated Brigandine Tassets + Heraldic Surcoat Tabards
   const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.228, 0.238, 0.095, 18), leatherMat);
   belt.position.y = 0.5;
   belt.scale.set(1.08, 1.0, 0.85);
   belt.castShadow = true;
+  belt.receiveShadow = true;
   const buckleOuter = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.095, 0.048), goldMat);
   buckleOuter.position.set(0, 0.5, 0.21);
+  buckleOuter.castShadow = true;
   const buckleGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.026, 0), tealGlowMat);
   buckleGem.position.set(0, 0.5, 0.235);
   bodyPivot.add(belt, buckleOuter, buckleGem);
+
+  for (let b = 0; b < 8; b++) {
+    const ba = (b / 8) * Math.PI * 2;
+    if (Math.cos(ba) > 0.85) continue;
+    const stud = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 6), goldMat);
+    stud.position.set(Math.sin(ba) * 0.25, 0.5, Math.cos(ba) * 0.2);
+    bodyPivot.add(stud);
+  }
+
+  // Front & Rear Heraldic Velvet Surcoat Tabards with Gold Trim
+  const frontTabardPivot = new THREE.Group();
+  frontTabardPivot.position.set(0, 0.47, 0.175);
+  const frontTabardCloth = new THREE.Mesh(new THREE.BoxGeometry(0.145, 0.27, 0.024), velvetMat);
+  frontTabardCloth.position.y = -0.135;
+  frontTabardCloth.castShadow = true;
+  frontTabardCloth.receiveShadow = true;
+  const frontTabardTrim = new THREE.Mesh(new THREE.BoxGeometry(0.155, 0.028, 0.028), goldMat);
+  frontTabardTrim.position.y = -0.26;
+  const frontTabardEmblem = new THREE.Mesh(new THREE.OctahedronGeometry(0.026, 0), goldMat);
+  frontTabardEmblem.scale.set(0.9, 1.25, 0.4);
+  frontTabardEmblem.position.set(0, -0.14, 0.014);
+  frontTabardPivot.add(frontTabardCloth, frontTabardTrim, frontTabardEmblem);
+
+  const rearTabardPivot = new THREE.Group();
+  rearTabardPivot.position.set(0, 0.47, -0.165);
+  const rearTabardCloth = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.29, 0.024), velvetMat);
+  rearTabardCloth.position.y = -0.145;
+  rearTabardCloth.castShadow = true;
+  const rearTabardTrim = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.028, 0.028), goldMat);
+  rearTabardTrim.position.y = -0.28;
+  rearTabardPivot.add(rearTabardCloth, rearTabardTrim);
+  bodyPivot.add(frontTabardPivot, rearTabardPivot);
 
   const tassetPivotLeft = new THREE.Group();
   tassetPivotLeft.position.set(-0.15, 0.47, 0.15);
   const tassetMeshL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.19, 0.032), darkLeatherMat);
   tassetMeshL.position.y = -0.09;
   tassetMeshL.castShadow = true;
+  tassetMeshL.receiveShadow = true;
   const tassetTrimL = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.026, 0.036), goldMat);
   tassetTrimL.position.y = -0.175;
   tassetPivotLeft.add(tassetMeshL, tassetTrimL);
@@ -691,6 +731,7 @@ export function createArticulatedHero(
   const tassetMeshR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.19, 0.032), darkLeatherMat);
   tassetMeshR.position.y = -0.09;
   tassetMeshR.castShadow = true;
+  tassetMeshR.receiveShadow = true;
   const tassetTrimR = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.026, 0.036), goldMat);
   tassetTrimR.position.y = -0.175;
   tassetPivotRight.add(tassetMeshR, tassetTrimR);
@@ -759,7 +800,28 @@ export function createArticulatedHero(
   scrollSeal.position.set(0.23, 0.54, -0.2);
   bodyPivot.add(pouchMesh, pouchFlap, pouchButton, flaskGlass, flaskNeck, scrollTube, scrollSeal);
 
-  // Two-Stage Dynamic Flowing Velvet Cloak + Fur Shoulder Mantle
+  // Engraved Steel & Leather Sword Scabbard on Left Hip with Twin Suspension Rings & Gold Chape
+  const scabbardGroup = new THREE.Group();
+  scabbardGroup.position.set(-0.23, 0.43, -0.04);
+  scabbardGroup.rotation.set(0.56, 0.12, -0.2);
+  const scabbardBody = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.66, 0.026), darkLeatherMat);
+  scabbardBody.position.y = -0.18;
+  scabbardBody.castShadow = true;
+  const scabbardMouth = new THREE.Mesh(new THREE.BoxGeometry(0.064, 0.075, 0.034), goldMat);
+  scabbardMouth.position.y = 0.13;
+  scabbardMouth.castShadow = true;
+  const scabbardChape = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.09, 4), steelMat);
+  scabbardChape.rotation.x = Math.PI;
+  scabbardChape.position.y = -0.54;
+  scabbardChape.castShadow = true;
+  const ringUpper = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.005, 6, 12), goldMat);
+  ringUpper.position.set(-0.032, 0.06, 0.01);
+  const ringLower = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.005, 6, 12), goldMat);
+  ringLower.position.set(-0.032, -0.14, 0.01);
+  scabbardGroup.add(scabbardBody, scabbardMouth, scabbardChape, ringUpper, ringLower);
+  bodyPivot.add(scabbardGroup);
+
+  // Two-Stage Dynamic Flowing Velvet Cloak + Fur Shoulder Mantle + Gold Brooch Clasps
   const shoulderMantle = new THREE.Mesh(
     new THREE.TorusGeometry(0.235, 0.055, 8, 18, Math.PI * 1.2),
     darkLeatherMat,
@@ -767,7 +829,25 @@ export function createArticulatedHero(
   shoulderMantle.rotation.x = Math.PI / 2 + 0.18;
   shoulderMantle.rotation.z = -Math.PI * 0.1;
   shoulderMantle.position.set(0, 0.96, -0.04);
+  shoulderMantle.castShadow = true;
   bodyPivot.add(shoulderMantle);
+
+  for (const bx of [-0.145, 0.145]) {
+    const brooch = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.014, 10), goldMat);
+    brooch.rotation.x = Math.PI / 2;
+    brooch.position.set(bx, 0.965, 0.115);
+    brooch.castShadow = true;
+    const broochRuby = new THREE.Mesh(new THREE.OctahedronGeometry(0.013, 0), rubySealMat);
+    broochRuby.position.set(bx, 0.965, 0.124);
+    bodyPivot.add(brooch, broochRuby);
+  }
+  const cloakChain = new THREE.Mesh(
+    new THREE.TorusGeometry(0.145, 0.008, 6, 16, Math.PI * 0.65),
+    goldMat,
+  );
+  cloakChain.rotation.z = Math.PI * 1.18;
+  cloakChain.position.set(0, 0.99, 0.125);
+  bodyPivot.add(cloakChain);
 
   const cloakGeo = createSculptedCloakGeometry();
   const cloak = new THREE.Mesh(cloakGeo, velvetMat);
@@ -891,7 +971,7 @@ export function createArticulatedHero(
   mustache.position.set(0, 0.056, 0.156);
   headGroup.add(goatee, mustache);
 
-  // Expressive Eyes, Brows & Cheek Scar
+  // Expressive Eyes with Sculpted Eyelid Rims, Brows & Cheek Scar
   const scleraMat = new THREE.MeshBasicMaterial({ color: '#F5EFE6' });
   const irisMat = new THREE.MeshBasicMaterial({ color: '#1E3A5F' });
   const eyeSparkMat = new THREE.MeshBasicMaterial({ color: '#4EF5E4' });
@@ -903,10 +983,13 @@ export function createArticulatedHero(
     iris.position.set(ex, 0.125, 0.166);
     const glint = new THREE.Mesh(new THREE.SphereGeometry(0.007, 6, 6), eyeSparkMat);
     glint.position.set(ex, 0.128, 0.175);
+    const upperLid = new THREE.Mesh(new THREE.TorusGeometry(0.025, 0.005, 6, 10, Math.PI), skinMat);
+    upperLid.position.set(ex, 0.129, 0.157);
+    upperLid.rotation.z = ex < 0 ? -0.12 : 0.12;
     const brow = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.014, 0.022), hairMat);
     brow.position.set(ex, 0.158, 0.162);
     brow.rotation.z = ex < 0 ? -0.14 : 0.14;
-    headGroup.add(sclera, iris, glint, brow);
+    headGroup.add(sclera, iris, glint, upperLid, brow);
   }
   const scar = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.055, 0.012), rubySealMat);
   scar.position.set(-0.072, 0.072, 0.155);
@@ -957,6 +1040,9 @@ export function createArticulatedHero(
 
   const plumePivot = new THREE.Group();
   plumePivot.position.set(0.15, 0.26, -0.02);
+  const plumeCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.018, 0.055, 8), goldMat);
+  plumeCollar.position.set(0.01, 0.02, -0.01);
+  plumeCollar.rotation.set(-0.4, 0, -0.25);
   const plumeCurve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, 0, 0),
     new THREE.Vector3(0.07, 0.14, -0.06),
@@ -970,15 +1056,20 @@ export function createArticulatedHero(
   plumeVane.position.set(0.075, 0.18, -0.16);
   plumeVane.rotation.set(-0.95, 0.15, -0.35);
   plumeVane.castShadow = true;
+  const plumeTipVane = new THREE.Mesh(new THREE.ConeGeometry(0.036, 0.22, 7), ivoryMat);
+  plumeTipVane.scale.set(0.4, 1, 1.15);
+  plumeTipVane.position.set(0.095, 0.245, -0.245);
+  plumeTipVane.rotation.set(-1.18, 0.18, -0.38);
+  plumeTipVane.castShadow = true;
   const plumeBaseFeather = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.22, 7), velvetMat);
   plumeBaseFeather.scale.set(0.55, 1, 1.15);
   plumeBaseFeather.position.set(0.055, 0.12, -0.09);
   plumeBaseFeather.rotation.set(-0.78, 0.12, -0.28);
   plumeBaseFeather.castShadow = true;
-  plumePivot.add(plumeStem, plumeBaseFeather, plumeVane);
+  plumePivot.add(plumeCollar, plumeStem, plumeBaseFeather, plumeVane, plumeTipVane);
   headGroup.add(plumePivot);
 
-  // Two-Segment Articulated Arms + 3-Lame Brass-Riveted Pauldrons + Vambrace Gauntlets + Embossed Buckler
+  // Two-Segment Articulated Arms + 3-Lame Brass-Riveted Pauldrons + Besagew Rondels + Vambrace Gauntlets
   const makePauldron = (side: number) => {
     const pGroup = new THREE.Group();
     const upperLame = new THREE.Mesh(
@@ -987,6 +1078,7 @@ export function createArticulatedHero(
     );
     upperLame.scale.set(1.12, 0.85, 1.08);
     upperLame.castShadow = true;
+    upperLame.receiveShadow = true;
     const goldTrim = new THREE.Mesh(new THREE.TorusGeometry(0.118, 0.015, 8, 18), goldMat);
     goldTrim.rotation.x = Math.PI / 2;
     const midLame = new THREE.Mesh(
@@ -1001,7 +1093,15 @@ export function createArticulatedHero(
     );
     lowerLame.position.y = -0.072;
     lowerLame.castShadow = true;
-    pGroup.add(upperLame, goldTrim, midLame, lowerLame);
+    // Protective Front Besagew Rondel
+    const besagew = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.016, 12), steelMat);
+    besagew.rotation.x = Math.PI / 2;
+    besagew.position.set(side * -0.065, -0.025, 0.108);
+    besagew.castShadow = true;
+    const besagewBoss = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.026, 6), goldMat);
+    besagewBoss.rotation.x = Math.PI / 2;
+    besagewBoss.position.set(side * -0.065, -0.025, 0.122);
+    pGroup.add(upperLame, goldTrim, midLame, lowerLame, besagew, besagewBoss);
     for (let r = -1; r <= 1; r++) {
       const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.011, 6, 6), goldMat);
       rivet.position.set(side * 0.108, -0.025, r * 0.048);
@@ -1054,8 +1154,11 @@ export function createArticulatedHero(
     gauntletPlate.castShadow = true;
     const knuckleRidge = new THREE.Mesh(new THREE.BoxGeometry(0.076, 0.016, 0.022), goldMat);
     knuckleRidge.position.set(side * 0.01, -0.244, 0.044);
+    const fingerLame = new THREE.Mesh(new THREE.BoxGeometry(0.066, 0.022, 0.026), darkSteelMat);
+    fingerLame.position.set(side * 0.008, -0.264, 0.036);
+    fingerLame.castShadow = true;
 
-    forearmPivot.add(bracer, vambracePlate, cuffGold, handMesh, gauntletPlate, knuckleRidge);
+    forearmPivot.add(bracer, vambracePlate, cuffGold, handMesh, gauntletPlate, knuckleRidge, fingerLame);
     bodyPivot.add(armGroup);
     return { armGroup, forearmPivot };
   };
@@ -1463,6 +1566,8 @@ export function createArticulatedHero(
 
       tassetPivotLeft.rotation.x = -0.1 - Math.max(0, leftLeg.rotation.x) * 0.45;
       tassetPivotRight.rotation.x = -0.1 - Math.max(0, rightLeg.rotation.x) * 0.45;
+      frontTabardPivot.rotation.x = -0.06 - Math.max(0, Math.abs(swing)) * 0.45 - airBillow * 0.35;
+      rearTabardPivot.rotation.x = 0.08 + p.speedRatio * 0.28 + airBillow * 0.55 + Math.sin(elapsed * 4.8) * 0.05;
 
       const lookYaw = Math.max(-0.62, Math.min(0.62, p.lookYaw ?? 0));
       headGroup.rotation.y = lookYaw + Math.sin(elapsed * 1.4) * 0.035;

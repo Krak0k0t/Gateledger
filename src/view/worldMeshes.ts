@@ -274,6 +274,8 @@ function addContactShadow(
   return mesh;
 }
 
+const _sconceDummy = new THREE.Object3D();
+
 function addInstancedScatter(
   parent: THREE.Object3D,
   geometry: THREE.BufferGeometry,
@@ -813,16 +815,23 @@ export function buildCourtyardWorld(
   shopPool.position.set(1.9, 0.02, 0);
   shop.add(shopPool);
 
+  const awningGeo = new THREE.BoxGeometry(1.45, 0.08, 0.56);
+  const awningInst = new THREE.InstancedMesh(awningGeo, pbr.crimsonClothMat, 6);
+  const awningDummy = new THREE.Object3D();
+  const awningCol = new THREE.Color();
   for (let i = 0; i < 6; i++) {
-    const aw = new THREE.Mesh(
-      new THREE.BoxGeometry(1.45, 0.08, 0.56),
-      i % 2 === 0 ? pbr.crimsonClothMat : pbr.stoneTrimMat,
-    );
-    aw.position.set(1.42, 2.15, -1.4 + i * 0.56);
-    aw.rotation.z = -0.26;
-    addInkEdges(aw, inkMat, 32);
-    shop.add(aw);
+    awningDummy.position.set(1.42, 2.15, -1.4 + i * 0.56);
+    awningDummy.rotation.set(0, 0, -0.26);
+    awningDummy.scale.set(1, 1, 1);
+    awningDummy.updateMatrix();
+    awningInst.setMatrixAt(i, awningDummy.matrix);
+    awningCol.set(i % 2 === 0 ? '#FFFFFF' : '#E2D0BA');
+    awningInst.setColorAt(i, awningCol);
   }
+  awningInst.instanceMatrix.needsUpdate = true;
+  if (awningInst.instanceColor) awningInst.instanceColor.needsUpdate = true;
+  awningInst.computeBoundingSphere();
+  shop.add(awningInst);
 
   // Deal Streak 3+ Golden Prestige Banners flanking the shop awning
   const prestigeGroup = new THREE.Group();
@@ -1091,30 +1100,44 @@ export function buildCourtyardWorld(
     makeBeacon(-3.8, 4.4, '#F43F5E'),
   ];
 
-  // Swaying sculpted cypresses in stone planters
-  const trees: THREE.Group[] = [];
+  // Swaying sculpted cypresses in stone planters using THREE.LOD (detailed < 34m, low-poly proxy >= 34m)
+  const trees: THREE.LOD[] = [];
+  const cypressPotGeo = new THREE.CylinderGeometry(0.46, 0.36, 0.5, 10);
+  const cypressProxyConeGeo = new THREE.ConeGeometry(0.86, 2.15, 6);
   for (const [tx, tz] of [
     [-7.6, -7.6],
     [7.6, -7.6],
     [7.6, 7.6],
     [-7.6, 7.6],
   ]) {
-    const tree = new THREE.Group();
-    tree.position.set(tx, 0, tz);
-    addContactShadow(tree, pbr.softShadowTex, 0, 0, 1.05, 1.05, 0.5);
-    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.36, 0.5, 10), pbr.cobaltMasonryMat);
+    const treeLod = new THREE.LOD();
+    treeLod.position.set(tx, 0, tz);
+    addContactShadow(treeLod, pbr.softShadowTex, 0, 0, 1.05, 1.05, 0.5);
+
+    const hiDetail = new THREE.Group();
+    const pot = new THREE.Mesh(cypressPotGeo, pbr.cobaltMasonryMat);
     pot.position.y = 0.25;
     addInkEdges(pot, inkMat, 32);
-    tree.add(pot);
+    hiDetail.add(pot);
     for (let t = 0; t < 3; t++) {
       const cone = new THREE.Mesh(new THREE.ConeGeometry(0.84 - t * 0.18, 0.94, 8), pbr.foliageMat);
       cone.position.y = 0.96 + t * 0.58;
       cone.castShadow = true;
       addInkEdges(cone, inkMat, 32);
-      tree.add(cone);
+      hiDetail.add(cone);
     }
-    group.add(tree);
-    trees.push(tree);
+
+    const lowProxy = new THREE.Group();
+    const potLow = new THREE.Mesh(cypressPotGeo, pbr.cobaltMasonryMat);
+    potLow.position.y = 0.25;
+    const coneLow = new THREE.Mesh(cypressProxyConeGeo, pbr.foliageMat);
+    coneLow.position.y = 1.52;
+    lowProxy.add(potLow, coneLow);
+
+    treeLod.addLevel(hiDetail, 0);
+    treeLod.addLevel(lowProxy, 34);
+    group.add(treeLod);
+    trees.push(treeLod);
   }
 
   // Instanced ground pebbles & moss tufts around terrace perimeter
@@ -1171,16 +1194,6 @@ export function buildCourtyardWorld(
   );
   if (courtyardSmoke) group.add(courtyardSmoke.points);
 
-  // Distance-LOD list for fine perimeter foliage/brazier LineSegments
-  const courtyardLodEntries: { obj: THREE.Object3D; x: number; z: number; maxDistSq: number }[] = [];
-  for (const t of trees) {
-    t.traverse((child) => {
-      if (child instanceof THREE.LineSegments) {
-        courtyardLodEntries.push({ obj: child, x: t.position.x, z: t.position.z, maxDistSq: 23 * 23 });
-      }
-    });
-  }
-
   return {
     group,
     update(elapsed, _exitPortalOpen, _chestsOpened, camX = 0, camZ = 0, extra) {
@@ -1188,13 +1201,6 @@ export function buildCourtyardWorld(
       pbr.waterRippleTex.offset.x = (elapsed * 0.04) % 1;
       pbr.waterRippleTex.offset.y = (elapsed * 0.03) % 1;
       courtyardSmoke?.update(elapsed);
-
-      for (let i = 0; i < courtyardLodEntries.length; i++) {
-        const entry = courtyardLodEntries[i];
-        const dx = entry.x - camX;
-        const dz = entry.z - camZ;
-        entry.obj.visible = dx * dx + dz * dz <= entry.maxDistSq;
-      }
 
       prestigeGroup.visible = Boolean(extra?.prestigeBanners);
       if (prestigeGroup.visible) {
@@ -1658,39 +1664,56 @@ export function buildDungeonWorld(
     }
   }
 
-  // Carved fluted rune columns / bridge piers / ruin monoliths aligned to terrain elevation
+  // Carved fluted rune columns wrapped in THREE.LOD (full 6-part < 34m, simplified monolith >= 34m)
   const capCrystals: THREE.Mesh[] = [];
+  const colLowGeo = new THREE.CylinderGeometry(0.72, 0.88, 3.25, 6);
   for (const ob of obstacles) {
     const obY = getRoomGroundY(roomHeightRef, ob.x, ob.z);
     addContactShadow(group, pbr.softShadowTex, ob.x, ob.z, 1.15, 1.15, 0.56);
+
+    const colLod = new THREE.LOD();
+    colLod.position.set(ob.x, obY, ob.z);
+
+    const hiCol = new THREE.Group();
     const colBase = new THREE.Mesh(colBaseGeo, pbr.stoneTrimMat);
-    colBase.position.set(ob.x, obY + 0.16, ob.z);
+    colBase.position.y = 0.16;
     colBase.receiveShadow = true;
     addInkEdges(colBase, inkMat, 32);
 
     const col = new THREE.Mesh(colShaftGeo, pbr.cobaltMasonryMat);
-    col.position.set(ob.x, obY + 1.65, ob.z);
+    col.position.y = 1.65;
     col.castShadow = true;
     col.receiveShadow = true;
     addInkEdges(col, inkMat, 34);
 
     const colCap = new THREE.Mesh(colCapGeo, pbr.stoneTrimMat);
-    colCap.position.set(ob.x, obY + 3.12, ob.z);
+    colCap.position.y = 3.12;
     addInkEdges(colCap, inkMat, 32);
 
     const band = new THREE.Mesh(colBandGeo, accentGlowMat);
-    band.position.set(ob.x, obY + 1.72, ob.z);
+    band.position.y = 1.72;
 
     const capBezel = new THREE.Mesh(colBezelGeo, pbr.forgedIronMat);
-    capBezel.position.set(ob.x, obY + 3.31, ob.z);
+    capBezel.position.y = 3.31;
     addInkEdges(capBezel, inkMat, 32);
 
     const cap = new THREE.Mesh(colOctGeo, crystalJewelMat);
-    cap.position.set(ob.x, obY + 3.64, ob.z);
-    cap.userData.baseY = obY + 3.64;
+    cap.position.y = 3.64;
+    cap.userData.baseY = 3.64;
     addInkEdges(cap, inkMat, 36);
     capCrystals.push(cap);
-    group.add(colBase, col, colCap, band, capBezel, cap);
+    hiCol.add(colBase, col, colCap, band, capBezel, cap);
+
+    const lowCol = new THREE.Group();
+    const colSimple = new THREE.Mesh(colLowGeo, pbr.cobaltMasonryMat);
+    colSimple.position.y = 1.62;
+    const capLow = new THREE.Mesh(colOctGeo, crystalJewelMat);
+    capLow.position.y = 3.64;
+    lowCol.add(colSimple, capLow);
+
+    colLod.addLevel(hiCol, 0);
+    colLod.addLevel(lowCol, 34);
+    group.add(colLod);
   }
 
   // Room-Specific Architectural Perimeter Decor (kept out of door paths |coord| >= 5.5)
@@ -1739,19 +1762,32 @@ export function buildDungeonWorld(
     [10.5, -wallEdge, 0],
   ];
 
-  // Glowing iron wall sconces framing the chamber perimeter for richer ambient color
+  // Glowing iron wall sconces batched via InstancedMesh (1 draw call for brackets + 1 for animated flames)
   const sconceBracketGeo = new THREE.BoxGeometry(0.14, 0.52, 0.22);
-  for (const [sx, sz, srot] of decorCoords) {
-    const sGroup = new THREE.Group();
-    sGroup.position.set(sx * 0.99, 2.2, sz * 0.99);
-    sGroup.rotation.y = srot;
-    const bracket = new THREE.Mesh(sconceBracketGeo, pbr.forgedIronMat);
-    const sconceFlame = new THREE.Mesh(sconceGeo, theme.decorKind === 'citadel' ? pbr.crimsonGlowMat : accentGlowMat);
-    sconceFlame.position.set(0, 0.28, 0.16);
-    roomFlames.push(sconceFlame);
-    sGroup.add(bracket, sconceFlame);
-    group.add(sGroup);
+  const sconceBracketInst = new THREE.InstancedMesh(sconceBracketGeo, pbr.forgedIronMat, decorCoords.length);
+  const sconceFlameMat = theme.decorKind === 'citadel' ? pbr.crimsonGlowMat : accentGlowMat;
+  const sconceFlameInst = new THREE.InstancedMesh(sconceGeo, sconceFlameMat, decorCoords.length);
+  const sconceFlameOrigins: { x: number; y: number; z: number }[] = [];
+  for (let i = 0; i < decorCoords.length; i++) {
+    const [sx, sz, srot] = decorCoords[i];
+    _sconceDummy.position.set(sx * 0.99, 2.2, sz * 0.99);
+    _sconceDummy.rotation.set(0, srot, 0);
+    _sconceDummy.scale.set(1, 1, 1);
+    _sconceDummy.updateMatrix();
+    sconceBracketInst.setMatrixAt(i, _sconceDummy.matrix);
+
+    const fx = sx * 0.99 + Math.sin(srot) * 0.16;
+    const fz = sz * 0.99 + Math.cos(srot) * 0.16;
+    sconceFlameOrigins.push({ x: fx, y: 2.48, z: fz });
+    _sconceDummy.position.set(fx, 2.48, fz);
+    _sconceDummy.updateMatrix();
+    sconceFlameInst.setMatrixAt(i, _sconceDummy.matrix);
   }
+  sconceBracketInst.instanceMatrix.needsUpdate = true;
+  sconceBracketInst.computeBoundingSphere();
+  sconceFlameInst.instanceMatrix.needsUpdate = true;
+  sconceFlameInst.frustumCulled = false;
+  group.add(sconceBracketInst, sconceFlameInst);
 
   if (theme.decorKind === 'ice') {
     // Glacial Ice Caverns: tall frosted sapphire crystal spires & icy plinths
@@ -2210,6 +2246,21 @@ export function buildDungeonWorld(
           0.85,
         );
         roomFlames[i].rotation.y = elapsed * 2.2 + i;
+      }
+      for (let i = 0; i < sconceFlameOrigins.length; i++) {
+        const fo = sconceFlameOrigins[i];
+        _sconceDummy.position.set(fo.x, fo.y, fo.z);
+        _sconceDummy.rotation.set(0, elapsed * 2.2 + i, 0);
+        _sconceDummy.scale.set(
+          0.85 + Math.sin(elapsed * 8 + i) * 0.1,
+          1.55 + Math.sin(elapsed * 11 + i * 2) * 0.28,
+          0.85,
+        );
+        _sconceDummy.updateMatrix();
+        sconceFlameInst.setMatrixAt(i, _sconceDummy.matrix);
+      }
+      if (sconceFlameOrigins.length > 0) {
+        sconceFlameInst.instanceMatrix.needsUpdate = true;
       }
       if (portalRing && portalMat) {
         portalRing.visible = exitPortalOpen;

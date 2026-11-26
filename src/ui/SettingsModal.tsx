@@ -7,15 +7,18 @@ import {
   type GameSettings,
   type KeybindAction,
 } from '../core/settings';
+import type { DynamicAudioEngine } from '../core/music';
 import { exportSavePayload, importSavePayload, type CampaignRecords } from '../systems/meta';
 import { t, type LanguageCode, type TranslationKey } from '../i18n/translations';
 import { GraphicsQualitySwitch } from './GraphicsQualitySwitch';
+import { MusicMiniPlayer } from './MusicMiniPlayer';
 
 interface SettingsModalProps {
   lang: LanguageCode;
   settings: GameSettings;
   records: CampaignRecords;
   gamepadConnected: boolean;
+  audio?: DynamicAudioEngine | null;
   onUpdateSettings: (next: GameSettings) => void;
   onImportRecords: (next: CampaignRecords) => void;
   onRebindCaptureChange?: (capturing: boolean) => void;
@@ -27,6 +30,7 @@ export function SettingsModal({
   settings,
   records,
   gamepadConnected,
+  audio = null,
   onUpdateSettings,
   onImportRecords,
   onRebindCaptureChange,
@@ -278,6 +282,8 @@ export function SettingsModal({
                 className="ledger-slider w-full"
               />
             </label>
+
+            <MusicMiniPlayer audio={audio} lang={lang} variant="menu" />
           </div>
 
           {/* Graphics Quality + Day 1 Route Guide */}

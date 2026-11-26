@@ -58,6 +58,12 @@ import {
 import { getDailySeed } from '../src/core/rng';
 import { createInputHub } from '../src/core/input';
 import {
+  computeSubduedMusicGain,
+  getNextCarouselIndex,
+  SOUNDTRACK_TRACKS,
+} from '../src/core/music';
+import { isMobileDevice } from '../src/hooks/useDeviceType';
+import {
   createDefaultSettings,
   DEFAULT_KEYBINDS,
   formatKeybindLabel,
@@ -3096,4 +3102,53 @@ test('moves: 3-phase attackPhase (windup -> hit -> recovery -> idle) and 0.05s H
   assert.ok(seenPhases.has('hit'));
   assert.ok(seenPhases.has('recovery'));
   assert.equal(sim.player.attackPhase, 'idle');
+});
+
+test('music: 5 real OGG soundtrack tracks, carousel wrap-around, subdued gain ceiling & 16-lang localization', () => {
+  assert.equal(SOUNDTRACK_TRACKS.length, 5);
+  const expectedFiles = [
+    'Gold.ogg',
+    'Gilded Throne.ogg',
+    'Ancient Slavic Shadows.ogg',
+    'Leshy.ogg',
+    'Last Stand.ogg',
+  ];
+  assert.deepEqual(
+    SOUNDTRACK_TRACKS.map((tr) => tr.fileName),
+    expectedFiles,
+  );
+  for (const tr of SOUNDTRACK_TRACKS) {
+    assert.ok(tr.src.startsWith('/assets/audio/'));
+    assert.ok(tr.src.endsWith('.ogg'));
+    for (const { code } of SUPPORTED_LANGUAGES) {
+      assert.ok(t(code, tr.titleKey).trim().length > 0, `Missing ${code}.${tr.titleKey}`);
+      assert.ok(t(code, tr.moodKey).trim().length > 0, `Missing ${code}.${tr.moodKey}`);
+    }
+    assert.notEqual(t('ru', tr.titleKey), t('en', tr.titleKey));
+  }
+
+  // Carousel wrapping forward & backward
+  assert.equal(getNextCarouselIndex(0, 1), 1);
+  assert.equal(getNextCarouselIndex(4, 1), 0);
+  assert.equal(getNextCarouselIndex(0, -1), 4);
+  assert.equal(getNextCarouselIndex(3, -1), 2);
+
+  // Subdued background music ceiling (<= 0.28 at max slider, 0 when muted, ducks on pause & low HP)
+  const maxSubdued = computeSubduedMusicGain(1, false, false, false);
+  assert.ok(maxSubdued > 0 && maxSubdued <= 0.28, `Expected subdued gain <= 0.28, got ${maxSubdued}`);
+  assert.equal(computeSubduedMusicGain(1, true, false, false), 0);
+  const pausedGain = computeSubduedMusicGain(0.5, false, true, false);
+  const activeGain = computeSubduedMusicGain(0.5, false, false, false);
+  assert.ok(pausedGain < activeGain, 'Expected pause to duck background music');
+  const lowHpGain = computeSubduedMusicGain(0.5, false, false, true);
+  assert.ok(lowHpGain < activeGain, 'Expected low HP mode to duck background music');
+});
+
+test('adaptive UI: isMobileDevice classifies touch viewports < 1024px cleanly', () => {
+  assert.equal(isMobileDevice(390, true), true);
+  assert.equal(isMobileDevice(844, true), true);
+  assert.equal(isMobileDevice(1023, true), true);
+  assert.equal(isMobileDevice(1024, true), false);
+  assert.equal(isMobileDevice(1440, false), false);
+  assert.equal(isMobileDevice(800, false), false);
 });

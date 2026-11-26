@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import rawContent from './data/gameContent.json';
-import { createInputHub, type InputHub, type VirtualAction } from './core/input';
+import { createInputHub, type InputHub } from './core/input';
 import { initMetrics, pushMetricEvent, type GameMetrics } from './core/metrics';
 import { createDynamicAudioEngine, type DynamicAudioEngine } from './core/music';
 import { parseSeed, getDailySeed } from './core/rng';
@@ -10,6 +10,7 @@ import {
   saveSettings,
   type GameSettings,
 } from './core/settings';
+import { useDeviceType } from './hooks/useDeviceType';
 import {
   isRtlLanguage,
   SUPPORTED_LANGUAGES,
@@ -82,7 +83,6 @@ import {
   type CampaignRecords,
 } from './systems/meta';
 import { createInitialAbilityCooldowns } from './systems/abilities';
-import { ActionBarHud } from './ui/ActionBarHud';
 import { BackpackModal } from './ui/BackpackModal';
 import { BoonModal } from './ui/BoonModal';
 import { CharterModal } from './ui/CharterModal';
@@ -112,14 +112,15 @@ import {
   WarningTriangleIcon,
 } from './ui/CustomIcons';
 import { GraphicsQualitySwitch } from './ui/GraphicsQualitySwitch';
+import { HUD } from './ui/HUD';
 import { LanguageModal } from './ui/LanguageModal';
 import { LedgerSummaryModal, type LedgerSummaryData } from './ui/LedgerSummaryModal';
 import { MinimapHud } from './ui/MinimapHud';
+import { MusicMiniPlayer } from './ui/MusicMiniPlayer';
 import { SettingsModal } from './ui/SettingsModal';
 import { ShopOverlay } from './ui/ShopOverlay';
 import { ShrineModal } from './ui/ShrineModal';
 import { useCardTilt3D } from './ui/TiltCard';
-import { TouchControls } from './ui/TouchControls';
 import { TownArtisanModal, type UpgradeDef } from './ui/TownArtisanModal';
 import {
   mountGateScene,
@@ -189,14 +190,28 @@ function CoinSealIcon() {
   );
 }
 
-function TitleLedgerEmblem({ title, subtitle }: { title: string; subtitle: string }) {
+function TitleLedgerEmblem({
+  title,
+  subtitle,
+  compact = false,
+}: {
+  title: string;
+  subtitle: string;
+  compact?: boolean;
+}) {
   return (
     <div
       role="img"
       aria-label={title}
-      className="glass-panel flex items-center gap-3.5 px-4 py-3 rounded-xl max-w-[380px]"
+      className={`glass-panel flex items-center rounded-xl max-w-[380px] ${
+        compact ? 'gap-2.5 px-3 py-2' : 'gap-3.5 px-4 py-3'
+      }`}
     >
-      <svg viewBox="0 0 64 74" className="w-12 h-14 shrink-0 drop-shadow-[0_0_10px_rgba(56,232,216,0.45)]" aria-hidden="true">
+      <svg
+        viewBox="0 0 64 74"
+        className={`${compact ? 'w-9 h-10' : 'w-12 h-14'} shrink-0 drop-shadow-[0_0_10px_rgba(56,232,216,0.45)]`}
+        aria-hidden="true"
+      >
         <path
           d="M6 70V30C6 15 18 5 32 5C46 5 58 15 58 30V70Z"
           fill="#1B2A4D"
@@ -220,11 +235,19 @@ function TitleLedgerEmblem({ title, subtitle }: { title: string; subtitle: strin
         />
       </svg>
       <div className="min-w-0 flex-1">
-        <div className="font-ledger text-xl sm:text-2xl font-bold tracking-wide text-[#FFF4DC] leading-tight drop-shadow-[0_2px_6px_rgba(244,185,66,0.3)]">
+        <div
+          className={`font-ledger font-bold tracking-wide text-[#FFF4DC] leading-tight drop-shadow-[0_2px_6px_rgba(244,185,66,0.3)] ${
+            compact ? 'text-base sm:text-lg' : 'text-xl sm:text-2xl'
+          }`}
+        >
           {title}
         </div>
-        <div className="h-[1.5px] w-full bg-gradient-to-r from-[#F4B942] via-[#38E8D8] to-transparent my-1.5" />
-        <div className="text-[11px] sm:text-xs font-bold text-[#9EB4DA] leading-snug">
+        <div className="h-[1.5px] w-full bg-gradient-to-r from-[#F4B942] via-[#38E8D8] to-transparent my-1" />
+        <div
+          className={`font-bold text-[#9EB4DA] leading-snug ${
+            compact ? 'text-[10px]' : 'text-[11px] sm:text-xs'
+          }`}
+        >
           {subtitle}
         </div>
       </div>
@@ -270,7 +293,7 @@ function TitleArchetypeCard({
           style={glareStyle}
         />
       )}
-      <div className="relative z-10 text-[11px] font-bold truncate" style={{ color: accent }}>
+      <div className="relative z-10 text-[11px] font-bold leading-tight break-words" style={{ color: accent }}>
         {title}
       </div>
       <div className="relative z-10 text-[9px] font-semibold text-[#9EB4DA] leading-tight mt-0.5">
@@ -285,6 +308,7 @@ export default function App() {
   const sceneRef = useRef<GateSceneHandle | null>(null);
   const inputRef = useRef<InputHub | null>(null);
   const audioRef = useRef<DynamicAudioEngine | null>(null);
+  const [audioEngine, setAudioEngine] = useState<DynamicAudioEngine | null>(null);
   const metricsRef = useRef<GameMetrics | null>(null);
 
   const initialAutoStart =
@@ -320,21 +344,26 @@ export default function App() {
     if (typeof window === 'undefined') return { w: 1280, h: 720 };
     return { w: window.innerWidth, h: window.innerHeight };
   });
-  const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.innerWidth < 900 || navigator.maxTouchPoints > 0;
-  });
-  const touchEnabled = touchOverride ?? isMobileViewport;
+  const detectedMobile = useDeviceType();
+  const touchEnabled = touchOverride ?? detectedMobile;
+  const isCompactHud = touchEnabled || viewportDims.w < 1024 || viewportDims.h < 560;
+  const isShortTitle = viewportDims.h < 580 || viewportDims.w < 640;
   const showPortraitTip = touchEnabled && viewportDims.w < 600 && viewportDims.h > viewportDims.w * 1.18;
 
   useEffect(() => {
     const onResize = () => {
-      setIsMobileViewport(window.innerWidth < 900 || navigator.maxTouchPoints > 0);
       setViewportDims({ w: window.innerWidth, h: window.innerHeight });
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  useEffect(() => {
+    sceneRef.current?.syncExternalState({
+      isMobile: touchEnabled,
+      inputMode: touchEnabled ? 'touch' : 'keyboard',
+    });
+  }, [touchEnabled]);
 
   // Campaign Meta State
   const [gold, setGold] = useState(
@@ -1027,6 +1056,7 @@ export default function App() {
     inputRef.current = input;
     input.setKeybinds(settings.keybinds);
     audioRef.current = audio;
+    setAudioEngine(audio);
     metricsRef.current = metrics;
     document.body.dataset.state = initialAutoStart ? 'playing' : 'title';
 
@@ -1063,6 +1093,10 @@ export default function App() {
       },
     );
     sceneRef.current = handle;
+    handle.syncExternalState({
+      isMobile: touchEnabled,
+      inputMode: touchEnabled ? 'touch' : 'keyboard',
+    });
     audio.setMusicVolume(settings.musicVolume);
     audio.setSfxVolume(settings.sfxVolume);
     handle.setGraphicsQuality(settings.graphicsQuality);
@@ -1079,6 +1113,8 @@ export default function App() {
     return () => {
       sceneRef.current = null;
       inputRef.current = null;
+      audioRef.current = null;
+      setAudioEngine(null);
       metricsRef.current = null;
       handle.dispose();
       audio.dispose();
@@ -1502,20 +1538,39 @@ export default function App() {
       <div className="pointer-events-none z-10 absolute inset-0" dir={isRtl ? 'rtl' : 'ltr'}>
         {/* TITLE SCREEN */}
         {shellMode === 'title' && (
-          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4 sm:p-8">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+          <div
+            className={`absolute inset-0 flex flex-col justify-between overflow-x-hidden ${
+              isShortTitle
+                ? 'pointer-events-auto overflow-y-auto p-2.5 sm:p-4 gap-2'
+                : 'pointer-events-none p-4 sm:p-8'
+            }`}
+          >
+            <div
+              className={`flex items-start justify-between ${
+                viewportDims.h < 580 && viewportDims.w >= 640
+                  ? 'flex-row gap-3'
+                  : 'flex-wrap gap-4'
+              }`}
+            >
               {/* Left Title Glassmorphism Cluster */}
               <div
                 data-ui-interactive="true"
-                className="pointer-events-auto flex flex-col items-start gap-3 max-w-md"
+                className={`pointer-events-auto flex flex-col items-start ${
+                  viewportDims.h < 580 ? 'gap-2 max-w-[400px]' : 'gap-3 max-w-md'
+                }`}
               >
                 <TitleLedgerEmblem
                   title={t(lang, 'game_title')}
                   subtitle={t(lang, 'game_subtitle')}
+                  compact={viewportDims.h < 580}
                 />
 
                 {/* Archetype Picker */}
-                <div className="glass-panel flex flex-col gap-1.5 w-full rounded-xl p-3">
+                <div
+                  className={`glass-panel flex flex-col w-full rounded-xl ${
+                    viewportDims.h < 580 ? 'gap-1 p-2' : 'gap-1.5 p-3'
+                  }`}
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#F4B942]">
                       {t(lang, 'arch_label')}
@@ -1560,7 +1615,11 @@ export default function App() {
                 </div>
 
                 {/* Difficulty Selector */}
-                <div className="glass-panel flex flex-col gap-1.5 w-full rounded-xl p-3">
+                <div
+                  className={`glass-panel flex flex-col w-full rounded-xl ${
+                    viewportDims.h < 580 ? 'gap-1 p-2' : 'gap-1.5 p-3'
+                  }`}
+                >
                   <span className="text-[11px] font-bold uppercase tracking-wider text-[#38E8D8]">
                     {t(lang, 'difficulty_label')}
                   </span>
@@ -1596,33 +1655,39 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Graphics Quality Selector */}
-                <div className="glass-panel flex flex-col gap-1.5 w-full p-3">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#F4B942]">
-                    <SparkleGlyphIcon className="w-3.5 h-3.5 text-[#38E8D8]" />
-                    <span>{t(lang, 'settings_gfx')}</span>
-                  </span>
-                  <GraphicsQualitySwitch
-                    lang={lang}
-                    value={settings.graphicsQuality}
-                    testIdPrefix="title-gfx"
-                    compact
-                    onChange={(nextQuality) => {
-                      audioRef.current?.unlock();
-                      audioRef.current?.playUiClick();
-                      setSettings((prev) => ({ ...prev, graphicsQuality: nextQuality }));
-                    }}
-                  />
-                </div>
+                {/* Graphics Quality Selector (shown inline on tall screens; right column on short landscape) */}
+                {!(viewportDims.h < 580 && viewportDims.w >= 640) && (
+                  <div className="glass-panel flex flex-col gap-1.5 w-full p-3">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#F4B942]">
+                      <SparkleGlyphIcon className="w-3.5 h-3.5 text-[#38E8D8]" />
+                      <span>{t(lang, 'settings_gfx')}</span>
+                    </span>
+                    <GraphicsQualitySwitch
+                      lang={lang}
+                      value={settings.graphicsQuality}
+                      testIdPrefix="title-gfx"
+                      compact
+                      onChange={(nextQuality) => {
+                        audioRef.current?.unlock();
+                        audioRef.current?.playUiClick();
+                        setSettings((prev) => ({ ...prev, graphicsQuality: nextQuality }));
+                      }}
+                    />
+                  </div>
+                )}
 
                 {/* Primary Hero CTA + Compact Secondary Actions */}
-                <div className="flex flex-col gap-2.5 w-full">
-                  <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       data-start="true"
                       onClick={handleStartCampaign}
-                      className="glass-gold-btn cursor-pointer px-7 py-3.5 font-bold text-base sm:text-lg tracking-wide active:translate-y-0.5 flex items-center gap-2"
+                      className={`glass-gold-btn cursor-pointer font-bold tracking-wide active:translate-y-0.5 flex items-center gap-2 ${
+                        viewportDims.h < 580
+                          ? 'px-5 py-2 text-sm'
+                          : 'px-7 py-3.5 text-base sm:text-lg'
+                      }`}
                     >
                       <SparkleGlyphIcon className="w-4 h-4 text-[#081022]" />
                       <span>{t(lang, 'enter_courtyard')}</span>
@@ -1632,7 +1697,7 @@ export default function App() {
                       type="button"
                       data-testid="btn-daily-run"
                       onClick={handleStartDailyRun}
-                      className="glass-teal-btn cursor-pointer px-3.5 py-2.5 font-bold text-xs sm:text-sm inline-flex items-center gap-1.5"
+                      className="glass-teal-btn cursor-pointer px-3.5 py-2 font-bold text-xs sm:text-sm inline-flex items-center gap-1.5"
                     >
                       <CalendarAlertIcon className="w-4 h-4 text-[#081022]" />
                       <span>
@@ -1696,51 +1761,80 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Top-Right Fullscreen, Settings & Mute Controls on Title */}
-              <div data-ui-interactive="true" className="pointer-events-auto flex items-center gap-2">
-                <button
-                  type="button"
-                  data-testid="btn-settings-title"
-                  onClick={() => {
-                    audioRef.current?.unlock();
-                    audioRef.current?.playUiClick();
-                    setShowSettingsModal(true);
-                  }}
-                  title={t(lang, 'settings_btn')}
-                  className="glass-btn cursor-pointer w-10 h-10 flex items-center justify-center font-bold text-[#38E8D8]"
-                >
-                  <SettingsCogIcon className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  data-testid="btn-fullscreen"
-                  onClick={toggleFullscreen}
-                  className="glass-btn cursor-pointer px-3 py-2 font-bold text-xs inline-flex items-center gap-1.5"
-                >
-                  <FullscreenGlyphIcon exit={isFullscreen} className="w-3.5 h-3.5 text-[#38E8D8]" />
-                  <span>{t(lang, isFullscreen ? 'fullscreen_exit' : 'fullscreen_enter')}</span>
-                </button>
-                <button
-                  type="button"
-                  aria-label="Audio"
-                  onClick={handleMuteToggle}
-                  className="glass-btn cursor-pointer w-10 h-10 flex items-center justify-center font-bold text-[#F4B942]"
-                >
-                  {liveHud.muted ? (
-                    <SpeakerOffIcon className="w-4 h-4" />
-                  ) : (
-                    <SpeakerOnIcon className="w-4 h-4" />
-                  )}
-                </button>
+              {/* Top-Right Fullscreen, Settings, Mute, Compact Graphics (on short landscape) & Gate Soundtrack Carousel */}
+              <div
+                data-ui-interactive="true"
+                className="pointer-events-auto flex flex-col items-end gap-2 w-full sm:w-auto max-w-xs shrink-0"
+              >
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-testid="btn-settings-title"
+                    onClick={() => {
+                      audioRef.current?.unlock();
+                      audioRef.current?.playUiClick();
+                      setShowSettingsModal(true);
+                    }}
+                    title={t(lang, 'settings_btn')}
+                    className="glass-btn cursor-pointer w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#38E8D8]"
+                  >
+                    <SettingsCogIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="btn-fullscreen"
+                    onClick={toggleFullscreen}
+                    className="glass-btn cursor-pointer px-3 py-2 font-bold text-xs inline-flex items-center gap-1.5"
+                  >
+                    <FullscreenGlyphIcon exit={isFullscreen} className="w-3.5 h-3.5 text-[#38E8D8]" />
+                    <span>{t(lang, isFullscreen ? 'fullscreen_exit' : 'fullscreen_enter')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Audio"
+                    onClick={handleMuteToggle}
+                    className="glass-btn cursor-pointer w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#F4B942]"
+                  >
+                    {liveHud.muted ? (
+                      <SpeakerOffIcon className="w-4 h-4" />
+                    ) : (
+                      <SpeakerOnIcon className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+
+                {viewportDims.h < 580 && viewportDims.w >= 640 && (
+                  <div className="glass-panel flex flex-col gap-1 w-full p-2">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#F4B942]">
+                      <SparkleGlyphIcon className="w-3 h-3 text-[#38E8D8]" />
+                      <span>{t(lang, 'settings_gfx')}</span>
+                    </span>
+                    <GraphicsQualitySwitch
+                      lang={lang}
+                      value={settings.graphicsQuality}
+                      testIdPrefix="title-gfx"
+                      compact
+                      onChange={(nextQuality) => {
+                        audioRef.current?.unlock();
+                        audioRef.current?.playUiClick();
+                        setSettings((prev) => ({ ...prev, graphicsQuality: nextQuality }));
+                      }}
+                    />
+                  </div>
+                )}
+
+                <MusicMiniPlayer audio={audioEngine} lang={lang} variant="menu" />
               </div>
             </div>
 
-            <p
-              className="text-center text-xs sm:text-sm font-bold tracking-wide text-[#FFF4DC]"
-              style={{ textShadow: '0 2px 6px #040712, 0 0 12px rgba(56, 232, 216, 0.45)' }}
-            >
-              {touchEnabled ? t(lang, 'controls_hint_touch') : t(lang, 'controls_hint_desktop')}
-            </p>
+            {viewportDims.h >= 540 && (
+              <p
+                className="text-center text-xs sm:text-sm font-bold tracking-wide text-[#FFF4DC]"
+                style={{ textShadow: '0 2px 6px #040712, 0 0 12px rgba(56, 232, 216, 0.45)' }}
+              >
+                {touchEnabled ? t(lang, 'controls_hint_touch') : t(lang, 'controls_hint_desktop')}
+              </p>
+            )}
           </div>
         )}
 
@@ -1765,40 +1859,63 @@ export default function App() {
 
         {/* IN-GAME HUD */}
         {shellMode !== 'title' && !hudHidden && (
-          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3 sm:p-5">
+          <div
+            className={`pointer-events-none absolute inset-0 flex flex-col justify-between ${
+              isCompactHud ? 'p-2' : 'p-3 sm:p-5'
+            }`}
+          >
             {/* Top HUD Row + Top-Anchored Banners */}
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-wrap items-start justify-between gap-2.5">
-                {/* Top-Left Glassmorphism Status Strip */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-start justify-between gap-2">
+                {/* Top-Left Glassmorphism Status Strip (ultra-slim single row on mobile/compact viewports) */}
                 <div
                   data-ui-interactive="true"
-                  className="glass-panel pointer-events-auto flex flex-wrap items-center gap-3 px-3.5 py-2 rounded-xl"
+                  className={`glass-panel pointer-events-auto flex flex-wrap items-center rounded-xl ${
+                    isCompactHud ? 'gap-1.5 px-2.5 py-1' : 'gap-3 px-3.5 py-2'
+                  }`}
                 >
-                  <div className="flex items-center gap-0.5" aria-label={t(lang, 'hud_hp')}>
-                    {Array.from({ length: liveHud.maxHp }).map((_, i) => (
-                      <HeartSealIcon key={i} filled={i < liveHud.hp} />
-                    ))}
-                  </div>
-                  <div className="h-5 w-px bg-[#F4B942]/25" />
+                  {isCompactHud ? (
+                    <div className="flex items-center gap-1" aria-label={t(lang, 'hud_hp')}>
+                      <HeartSealIcon filled />
+                      <span className="tabular-nums font-bold text-xs text-[#FFF4DC]">
+                        {liveHud.hp}/{liveHud.maxHp}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-0.5" aria-label={t(lang, 'hud_hp')}>
+                      {Array.from({ length: liveHud.maxHp }).map((_, i) => (
+                        <HeartSealIcon key={i} filled={i < liveHud.hp} />
+                      ))}
+                    </div>
+                  )}
+                  <div className="h-4 w-px bg-[#F4B942]/25" />
                   <div className="flex items-center gap-1" aria-label={t(lang, 'hud_gold')}>
                     <CoinSealIcon />
-                    <span className="tabular-nums font-bold text-base sm:text-lg text-[#F4B942]">
+                    <span
+                      className={`tabular-nums font-bold text-[#F4B942] ${
+                        isCompactHud ? 'text-sm' : 'text-base sm:text-lg'
+                      }`}
+                    >
                       {gold}
                     </span>
                   </div>
-                  <div className="h-5 w-px bg-[#F4B942]/25" />
+                  <div className="h-4 w-px bg-[#F4B942]/25" />
                   <div className="flex flex-col leading-tight">
                     <span className="text-[10px] font-bold uppercase text-[#38E8D8]">
                       {endlessMode ? `${t(lang, 'endless_week_badge')} · ` : ''}
-                      {t(lang, 'hud_week_day', { w: week, d: day })} · {currentLocLabel}
+                      {t(lang, 'hud_week_day', { w: week, d: day })}
+                      {isCompactHud && liveHud.zone === 'dungeon' ? ` · F${liveHud.floor}` : ''}
+                      {!isCompactHud ? ` · ${currentLocLabel}` : ''}
                     </span>
-                    <span className="text-xs font-bold tabular-nums text-[#FF9E44]">
-                      {t(lang, 'hud_debt')}: {debtPaid}/{debtTarget}g · Bounty:{' '}
-                      <span className="uppercase text-[#38E8D8]">{bountyEra} 3×</span>
-                    </span>
+                    {!isCompactHud && (
+                      <span className="text-xs font-bold tabular-nums text-[#FF9E44]">
+                        {t(lang, 'hud_debt')}: {debtPaid}/{debtTarget}g · Bounty:{' '}
+                        <span className="uppercase text-[#38E8D8]">{bountyEra} 3×</span>
+                      </span>
+                    )}
                   </div>
 
-                  {beltPerks.activeTags.length > 0 && (
+                  {!isCompactHud && beltPerks.activeTags.length > 0 && (
                     <span
                       title={t(lang, 'belt_runes_label')}
                       className="chamfer-badge inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#1A2547] text-[#F4B942] text-[10px] font-bold border border-[#F4B942]/45"
@@ -1808,7 +1925,7 @@ export default function App() {
                     </span>
                   )}
 
-                  {pactMods.heatLevel > 0 && (
+                  {!isCompactHud && pactMods.heatLevel > 0 && (
                     <span
                       data-testid="hud-pact-badge"
                       className="chamfer-badge inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#3B1626] text-[#FF5E3A] text-[10px] font-bold border border-[#FF5E3A]/60"
@@ -1818,7 +1935,7 @@ export default function App() {
                     </span>
                   )}
 
-                  {week > 4 && (
+                  {!isCompactHud && week > 4 && (
                     <span
                       data-testid="hud-ascension-badge"
                       className="chamfer-badge px-1.5 py-0.5 bg-[#2E1065] text-[#C084FC] text-[10px] font-bold border border-[#C084FC]/55"
@@ -1827,28 +1944,33 @@ export default function App() {
                     </span>
                   )}
 
-                  <span
-                    data-testid="hud-day-event"
-                    title={t(lang, dayEvent.descKey as TranslationKey)}
-                    className="chamfer-badge hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-[#081022] text-[10px] font-bold border"
-                    style={{ borderColor: `${dayEvent.accent}70`, color: dayEvent.accent }}
-                  >
-                    <span>{dayEvent.icon}</span>
-                    <span>{t(lang, dayEvent.nameKey as TranslationKey)}</span>
-                  </span>
-
-                  {(liveHud.zone === 'courtyard' ? ownedSupplies.length : activeRunSupplies.length) > 0 && (
+                  {!isCompactHud && (
                     <span
-                      data-testid="hud-supplies-badge"
-                      title={t(lang, 'supplies_title')}
-                      className="chamfer-badge inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#13293D] text-[#F4B942] text-[10px] font-bold border border-[#F4B942]/50"
+                      data-testid="hud-day-event"
+                      title={t(lang, dayEvent.descKey as TranslationKey)}
+                      className="chamfer-badge hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-[#081022] text-[10px] font-bold border"
+                      style={{ borderColor: `${dayEvent.accent}70`, color: dayEvent.accent }}
                     >
-                      <SupplyCompassIcon className="w-3 h-3 text-[#38E8D8]" />
-                      <span>{liveHud.zone === 'courtyard' ? ownedSupplies.length : activeRunSupplies.length}</span>
+                      <span>{dayEvent.icon}</span>
+                      <span>{t(lang, dayEvent.nameKey as TranslationKey)}</span>
                     </span>
                   )}
 
-                  {equippedFamiliarDef && (
+                  {!isCompactHud &&
+                    (liveHud.zone === 'courtyard' ? ownedSupplies.length : activeRunSupplies.length) > 0 && (
+                      <span
+                        data-testid="hud-supplies-badge"
+                        title={t(lang, 'supplies_title')}
+                        className="chamfer-badge inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#13293D] text-[#F4B942] text-[10px] font-bold border border-[#F4B942]/50"
+                      >
+                        <SupplyCompassIcon className="w-3 h-3 text-[#38E8D8]" />
+                        <span>
+                          {liveHud.zone === 'courtyard' ? ownedSupplies.length : activeRunSupplies.length}
+                        </span>
+                      </span>
+                    )}
+
+                  {!isCompactHud && equippedFamiliarDef && (
                     <span
                       data-testid="hud-familiar-badge"
                       title={`${t(lang, equippedFamiliarDef.nameKey as TranslationKey)} — ${t(lang, equippedFamiliarDef.descKey as TranslationKey)}`}
@@ -1862,21 +1984,23 @@ export default function App() {
                     </span>
                   )}
 
-                  <span
-                    data-testid="hud-contract-chip"
-                    className="chamfer-badge hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#081022] text-[#38E8D8] text-[10px] font-bold border border-[#38E8D8]/40"
-                  >
-                    <CharterSealIcon className="w-3 h-3 text-[#F4B942]" />
-                    <span>{t(lang, activeContract.nameKey as TranslationKey)}</span>
-                    <span className="tabular-nums text-[#FFF4DC]">
-                      {activeContract.progress}/{activeContract.target}
+                  {!isCompactHud && (
+                    <span
+                      data-testid="hud-contract-chip"
+                      className="chamfer-badge hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#081022] text-[#38E8D8] text-[10px] font-bold border border-[#38E8D8]/40"
+                    >
+                      <CharterSealIcon className="w-3 h-3 text-[#F4B942]" />
+                      <span>{t(lang, activeContract.nameKey as TranslationKey)}</span>
+                      <span className="tabular-nums text-[#FFF4DC]">
+                        {activeContract.progress}/{activeContract.target}
+                      </span>
+                      <span className="text-[#F4B942]">
+                        (+{activeContract.rewardGold}g · +{scaleShardsByPact(activeContract.rewardShards, pactMods.shardMult)})
+                      </span>
                     </span>
-                    <span className="text-[#F4B942]">
-                      (+{activeContract.rewardGold}g · +{scaleShardsByPact(activeContract.rewardShards, pactMods.shardMult)})
-                    </span>
-                  </span>
+                  )}
 
-                  {liveHud.zone === 'dungeon' && (
+                  {!isCompactHud && liveHud.zone === 'dungeon' && (
                     <>
                       <div className="h-5 w-px bg-[#F4B942]/25" />
                       <div className="flex items-center gap-2">
@@ -1940,7 +2064,7 @@ export default function App() {
                 </div>
 
                 {/* Top-Right Compact Controls Strip + Dungeon Minimap & Boons */}
-                <div className="flex flex-col items-end gap-2 ml-auto">
+                <div className="flex flex-col items-end gap-2 ml-auto shrink-0">
                   <div
                     data-ui-interactive="true"
                     className="pointer-events-auto flex items-center gap-1 sm:gap-1.5"
@@ -1953,31 +2077,36 @@ export default function App() {
                         audioRef.current?.playUiClick();
                         callbacksRef.current.onBagToggle();
                       }}
-                      className="glass-btn cursor-pointer px-2 sm:px-2.5 h-8 sm:h-10 font-bold text-[11px] sm:text-xs inline-flex items-center gap-1.5"
+                      className="glass-btn cursor-pointer px-2 sm:px-2.5 h-8 sm:h-10 font-bold text-[11px] sm:text-xs inline-flex items-center gap-1"
                     >
                       <SatchelPackIcon className="w-3.5 h-3.5 text-[#F4B942]" />
-                      <span className="hidden sm:inline">{t(lang, 'hud_bag')}</span>
+                      {!isCompactHud && (
+                        <span className="hidden sm:inline">{t(lang, 'hud_bag')}</span>
+                      )}
                       <span>({bagItemCount})</span>
                     </button>
 
-                    <button
-                      type="button"
-                      data-testid="btn-codex-hud"
-                      onClick={() => {
-                        audioRef.current?.unlock();
-                        audioRef.current?.playUiClick();
-                        setShowCodexModal(true);
-                      }}
-                      title={t(lang, 'codex_btn')}
-                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#F4B942]"
-                    >
-                      <CodexTomeIcon className="w-4 h-4" />
-                    </button>
+                    {!isCompactHud && (
+                      <button
+                        type="button"
+                        data-testid="btn-codex-hud"
+                        onClick={() => {
+                          audioRef.current?.unlock();
+                          audioRef.current?.playUiClick();
+                          setShowCodexModal(true);
+                        }}
+                        title={t(lang, 'codex_btn')}
+                        className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#F4B942]"
+                      >
+                        <CodexTomeIcon className="w-4 h-4" />
+                      </button>
+                    )}
 
                     <button
                       type="button"
+                      data-testid="btn-touch-toggle"
                       onClick={() => setTouchOverride(!touchEnabled)}
-                      title="Touch Controls"
+                      title="Touch / Desktop UI"
                       className={`cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold ${
                         touchEnabled ? 'glass-teal-btn' : 'glass-btn text-[#38E8D8]'
                       }`}
@@ -1985,30 +2114,34 @@ export default function App() {
                       <GamepadTouchIcon className="w-4 h-4" />
                     </button>
 
-                    <button
-                      type="button"
-                      data-testid="btn-hide-hud"
-                      onClick={() => setHudHidden(true)}
-                      title={t(lang, 'hud_hide')}
-                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#38E8D8]"
-                    >
-                      <CameraEyeIcon className="w-4 h-4" />
-                    </button>
+                    {!isCompactHud && (
+                      <button
+                        type="button"
+                        data-testid="btn-hide-hud"
+                        onClick={() => setHudHidden(true)}
+                        title={t(lang, 'hud_hide')}
+                        className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#38E8D8]"
+                      >
+                        <CameraEyeIcon className="w-4 h-4" />
+                      </button>
+                    )}
 
-                    <button
-                      type="button"
-                      data-testid="btn-language-hud"
-                      onClick={() => {
-                        audioRef.current?.unlock();
-                        audioRef.current?.playUiClick();
-                        setShowLangModal(true);
-                      }}
-                      title={t(lang, 'language_label')}
-                      className="glass-btn cursor-pointer px-2 sm:px-2.5 h-8 sm:h-10 font-bold text-[11px] sm:text-xs inline-flex items-center gap-1"
-                    >
-                      <GlobeRuneIcon className="w-3.5 h-3.5 text-[#38E8D8]" />
-                      <span>{lang.toUpperCase()}</span>
-                    </button>
+                    {!isCompactHud && (
+                      <button
+                        type="button"
+                        data-testid="btn-language-hud"
+                        onClick={() => {
+                          audioRef.current?.unlock();
+                          audioRef.current?.playUiClick();
+                          setShowLangModal(true);
+                        }}
+                        title={t(lang, 'language_label')}
+                        className="glass-btn cursor-pointer px-2 sm:px-2.5 h-8 sm:h-10 font-bold text-[11px] sm:text-xs inline-flex items-center gap-1"
+                      >
+                        <GlobeRuneIcon className="w-3.5 h-3.5 text-[#38E8D8]" />
+                        <span>{lang.toUpperCase()}</span>
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -2024,28 +2157,32 @@ export default function App() {
                       <SettingsCogIcon className="w-4 h-4" />
                     </button>
 
-                    <button
-                      type="button"
-                      data-testid="btn-fullscreen-hud"
-                      onClick={toggleFullscreen}
-                      title={t(lang, isFullscreen ? 'fullscreen_exit' : 'fullscreen_enter')}
-                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#38E8D8]"
-                    >
-                      <FullscreenGlyphIcon exit={isFullscreen} className="w-4 h-4" />
-                    </button>
+                    {!isCompactHud && (
+                      <button
+                        type="button"
+                        data-testid="btn-fullscreen-hud"
+                        onClick={toggleFullscreen}
+                        title={t(lang, isFullscreen ? 'fullscreen_exit' : 'fullscreen_enter')}
+                        className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#38E8D8]"
+                      >
+                        <FullscreenGlyphIcon exit={isFullscreen} className="w-4 h-4" />
+                      </button>
+                    )}
 
-                    <button
-                      type="button"
-                      onClick={handleMuteToggle}
-                      title="Mute [M]"
-                      className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#F4B942]"
-                    >
-                      {liveHud.muted ? (
-                        <SpeakerOffIcon className="w-4 h-4" />
-                      ) : (
-                        <SpeakerOnIcon className="w-4 h-4" />
-                      )}
-                    </button>
+                    {!isCompactHud && (
+                      <button
+                        type="button"
+                        onClick={handleMuteToggle}
+                        title="Mute [M]"
+                        className="glass-btn cursor-pointer w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-[#F4B942]"
+                      >
+                        {liveHud.muted ? (
+                          <SpeakerOffIcon className="w-4 h-4" />
+                        ) : (
+                          <SpeakerOnIcon className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -2055,7 +2192,9 @@ export default function App() {
                       className="glass-gold-btn cursor-pointer px-2 sm:px-3 h-8 sm:h-10 font-bold text-[11px] sm:text-xs inline-flex items-center gap-1"
                     >
                       <PauseGlyphIcon className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">{t(lang, 'hud_pause')}</span>
+                      {!isCompactHud && (
+                        <span className="hidden sm:inline">{t(lang, 'hud_pause')}</span>
+                      )}
                     </button>
                   </div>
 
@@ -2279,7 +2418,8 @@ export default function App() {
                     <span>{t(lang, 'room_cleared')}</span>
                   </div>
                 )}
-                {settings.showDay1Guide &&
+                {!isCompactHud &&
+                  settings.showDay1Guide &&
                   !guideDismissed &&
                   week === 1 &&
                   day === 1 &&
@@ -2315,50 +2455,28 @@ export default function App() {
               </div>
             </div>
 
-            {/* Bottom Prompt + Warcraft/Witcher ActionBar HUD */}
+            {/* Adaptive Desktop / Mobile Controls + Soundtrack Mini-Player */}
             <div className="flex flex-col items-center gap-2">
-              {interactLabel && shellMode === 'playing' && (
-                <button
-                  type="button"
-                  data-ui-interactive="true"
-                  data-testid="btn-interact-prompt"
-                  onClick={() => inputRef.current?.triggerVirtualAction('interact')}
-                  className="glass-teal-btn pointer-events-auto cursor-pointer px-5 py-2 rounded-xl font-bold text-sm"
-                >
-                  {interactLabel}
-                </button>
-              )}
-
               {shellMode === 'playing' && (
-                <div className={touchEnabled ? 'mb-[132px]' : ''}>
-                  <ActionBarHud
-                    lang={lang}
-                    hud={liveHud}
-                    keybinds={settings.keybinds}
-                    onTriggerAction={(action) => {
-                      audioRef.current?.unlock();
-                      inputRef.current?.triggerVirtualAction(action);
-                    }}
-                  />
-                </div>
+                <HUD
+                  isMobile={touchEnabled}
+                  lang={lang}
+                  hud={liveHud}
+                  keybinds={settings.keybinds}
+                  interactLabel={interactLabel}
+                  audio={audioEngine}
+                  onMoveVector={(x, z) => inputRef.current?.setVirtualMove(x, z)}
+                  onTriggerAction={(action) => {
+                    audioRef.current?.unlock();
+                    inputRef.current?.triggerVirtualAction(action);
+                  }}
+                  onCycleTarget={() => sceneRef.current?.cycleTargetEnemy()}
+                  onOpenBag={() => callbacksRef.current.onBagToggle()}
+                />
               )}
             </div>
           </div>
         )}
-
-        {/* TOUCH CONTROLS (Tablets / Smartphones / Toggled) */}
-        <TouchControls
-          lang={lang}
-          visible={touchEnabled && shellMode === 'playing'}
-          inDungeon={liveHud.zone === 'dungeon'}
-          hasInteract={Boolean(liveHud.nearbyInteract)}
-          onMoveVector={(x, z) => inputRef.current?.setVirtualMove(x, z)}
-          onAction={(action: VirtualAction) => {
-            audioRef.current?.unlock();
-            inputRef.current?.triggerVirtualAction(action);
-          }}
-          onOpenBag={() => callbacksRef.current.onBagToggle()}
-        />
 
         {/* BACKPACK MODAL */}
         {activeModal === 'bag' && (
@@ -3237,6 +3355,7 @@ export default function App() {
             settings={settings}
             records={records}
             gamepadConnected={Boolean(liveHud.gamepadConnected)}
+            audio={audioEngine}
             onUpdateSettings={(next) => setSettings(next)}
             onImportRecords={(nextRecs) => {
               saveCampaignRecords(nextRecs);

@@ -197,6 +197,8 @@ export interface GateSceneHandle {
   enterDungeon: (floor: number, week: number, mode?: DungeonMode) => void;
   returnToCourtyard: (week: number, healFull: boolean) => void;
   resetCourtyard: (maxHp: number, maxPotions: number) => void;
+  cycleTargetEnemy: () => void;
+  syncExternalState: (state: { isMobile?: boolean; inputMode?: 'touch' | 'keyboard' }) => void;
   dispose: () => void;
 }
 
@@ -1159,12 +1161,35 @@ export function mountGateScene(
   let lastTargetedHp = -1;
   let lastRiposteReady = false;
   let lastHudIdleSig = '';
+  let externalIsMobile = false;
+  let externalInputMode: 'touch' | 'keyboard' = 'keyboard';
   const _cachedGroundHit: {
     dx: number | null;
     dz: number | null;
     hitX: number | null;
     hitZ: number | null;
   } = { dx: null, dz: null, hitX: null, hitZ: null };
+
+  const performTabTargetCycle = () => {
+    if (sim.zone !== 'dungeon') return;
+    const nextId = cycleTargetEnemyId(
+      sim.enemies,
+      sim.player.x,
+      sim.player.z,
+      tabLockedEnemyId ?? targetedEnemyId,
+    );
+    tabLockedEnemyId = nextId;
+    targetedEnemyId = nextId;
+    audio.unlock();
+    audio.playUiClick();
+    if (nextId) {
+      const lockedEnt = sim.enemies.find((e) => e.id === nextId);
+      if (lockedEnt) {
+        vfxOverlay.spawnShockwave(lockedEnt.x, 0.16, lockedEnt.z, 72, '#F4B942', 0.28);
+      }
+    }
+    pushHud(true);
+  };
 
   // Initial camera setup
   camera.position.set(0, 14.2, 16.2);
@@ -1364,7 +1389,7 @@ export function mountGateScene(
           tabLockedEnemyId = null;
         }
       }
-      if (!targetedEnemyId) {
+      if (!targetedEnemyId && externalInputMode !== 'touch') {
         let bestDist = Infinity;
         for (const e of sim.enemies) {
           if (e.state === 'ko') continue;
@@ -2238,23 +2263,7 @@ export function mountGateScene(
       }
 
       if (input.consumeJustPressed('Tab') && sim.zone === 'dungeon') {
-        const nextId = cycleTargetEnemyId(
-          sim.enemies,
-          sim.player.x,
-          sim.player.z,
-          tabLockedEnemyId ?? targetedEnemyId,
-        );
-        tabLockedEnemyId = nextId;
-        targetedEnemyId = nextId;
-        audio.unlock();
-        audio.playUiClick();
-        if (nextId) {
-          const lockedEnt = sim.enemies.find((e) => e.id === nextId);
-          if (lockedEnt) {
-            vfxOverlay.spawnShockwave(lockedEnt.x, 0.16, lockedEnt.z, 72, '#F4B942', 0.28);
-          }
-        }
-        pushHud(true);
+        performTabTargetCycle();
       }
 
       input.getMoveAxis(_axis);
@@ -2305,6 +2314,7 @@ export function mountGateScene(
       }
 
       let aim =
+        externalInputMode !== 'touch' &&
         !(orb.dragging && !orb.rmb) &&
         (attackPressed ||
           attackReleased ||
@@ -3073,6 +3083,14 @@ export function mountGateScene(
       sim = createCourtyardSim(maxHp, maxPotions, rand, activeRunMods);
       syncZoneScene();
       pushHud(true);
+    },
+    cycleTargetEnemy() {
+      performTabTargetCycle();
+    },
+    syncExternalState(state: { isMobile?: boolean; inputMode?: 'touch' | 'keyboard' }) {
+      if (typeof state.isMobile === 'boolean') externalIsMobile = state.isMobile;
+      if (state.inputMode) externalInputMode = state.inputMode;
+      void externalIsMobile;
     },
     dispose() {
       disposed = true;

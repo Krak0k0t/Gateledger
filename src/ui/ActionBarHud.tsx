@@ -13,11 +13,11 @@ interface ActionBarHudProps {
   onTriggerAction: (action: VirtualAction) => void;
 }
 
-function AbilityIconSvg({ id, color }: { id: AbilityId; color: string }) {
+export function AbilityIconSvg({ id, color, className = 'w-5 h-5' }: { id: AbilityId; color: string; className?: string }) {
   switch (id) {
     case 'whirlwind':
       return (
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3a9 9 0 0 1 8.5 6" />
           <path d="M21 12a9 9 0 0 1-6 8.5" />
           <path d="M12 21a9 9 0 0 1-8.5-6" />
@@ -27,7 +27,7 @@ function AbilityIconSvg({ id, color }: { id: AbilityId; color: string }) {
       );
     case 'leap_slam':
       return (
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 16c2-6 4-10 6-10s4 4 6 10" />
           <path d="M12 6v10" />
           <path d="M4 19h16" />
@@ -36,7 +36,7 @@ function AbilityIconSvg({ id, color }: { id: AbilityId; color: string }) {
       );
     case 'blade_volley':
       return (
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 17L19 5" />
           <path d="M4 11l9-7" />
           <path d="M11 20l9-8" />
@@ -45,34 +45,34 @@ function AbilityIconSvg({ id, color }: { id: AbilityId; color: string }) {
       );
     case 'ignis_cone':
       return (
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3c2.5 3 5 5.6 5 9a5 5 0 1 1-10 0c0-2.2 1.2-4.2 2.4-5.7.2 1.6 1.2 2.7 2.2 2.7.5-2.1.4-4-.4-6z" />
           <path d="M10 15a2 2 0 0 0 4 0c0-1-.8-1.8-2-2.8-1.2 1-2 1.8-2 2.8z" fill={color} />
         </svg>
       );
     case 'aegis_ward':
       return (
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3l7 3v5.5c0 4.5-3 8.1-7 9.5-4-1.4-7-5-7-9.5V6l7-3z" />
           <path d="M9 12l2 2 4-4" />
         </svg>
       );
     case 'frost_nova':
       return (
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9L4.9 19.1" />
           <circle cx="12" cy="12" r="2.2" fill={color} />
         </svg>
       );
     case 'blink_strike':
       return (
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M13 2L4 14h7l-1 8 10-12h-7l0-8z" />
         </svg>
       );
     case 'meteor_call':
       return (
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 4l6 6" />
           <path d="M17 3l4 4" />
           <path d="M11 7l6 6" />

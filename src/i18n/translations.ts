@@ -436,7 +436,25 @@ export type TranslationKey =
   | 'status_burn'
   | 'status_chill'
   | 'status_poison'
-  | 'status_stun';
+  | 'status_stun'
+  | 'track_gold_title'
+  | 'track_gilded_throne_title'
+  | 'track_slavic_shadows_title'
+  | 'track_leshy_title'
+  | 'track_last_stand_title'
+  | 'track_mood_courtyard'
+  | 'track_mood_shop'
+  | 'track_mood_ruins'
+  | 'track_mood_wilds'
+  | 'track_mood_boss'
+  | 'music_player_title'
+  | 'music_carousel_badge'
+  | 'music_prev'
+  | 'music_next'
+  | 'music_play'
+  | 'music_pause'
+  | 'mobile_wheel_title'
+  | 'mobile_actions_more';
 
 export type TranslationDict = Record<TranslationKey, string>;
 
@@ -836,6 +854,24 @@ const EN: TranslationDict = {
   status_chill: 'Chill',
   status_poison: 'Poison',
   status_stun: 'Stunned',
+  track_gold_title: 'Golden Ledger',
+  track_gilded_throne_title: 'Gilded Throne of Deals',
+  track_slavic_shadows_title: 'Ancient Slavic Shadows',
+  track_leshy_title: 'Whisper of the Leshy',
+  track_last_stand_title: 'Last Stand at the Gate',
+  track_mood_courtyard: 'Courtyard Dawn',
+  track_mood_shop: 'Merchant Haggling',
+  track_mood_ruins: 'Ancient Vaults',
+  track_mood_wilds: 'Forest Spirits',
+  track_mood_boss: 'Boss Confrontation',
+  music_player_title: 'Gate Soundtrack',
+  music_carousel_badge: 'Carousel',
+  music_prev: 'Previous track',
+  music_next: 'Next track',
+  music_play: 'Play music',
+  music_pause: 'Pause music',
+  mobile_wheel_title: 'Skills',
+  mobile_actions_more: 'More',
 };
 
 const TRANSLATIONS: Record<LanguageCode, TranslationDict> = {
@@ -3343,6 +3379,24 @@ const TRANSLATIONS: Record<LanguageCode, TranslationDict> = {
     status_chill: 'Охлаждение',
     status_poison: 'Яд',
     status_stun: 'Оглушён',
+    track_gold_title: 'Золотая казна',
+    track_gilded_throne_title: 'Позолоченный трон торга',
+    track_slavic_shadows_title: 'Тени древних славян',
+    track_leshy_title: 'Шёпот Лешего',
+    track_last_stand_title: 'Последний рубеж Врат',
+    track_mood_courtyard: 'Утро у Врат',
+    track_mood_shop: 'Торговая лавка',
+    track_mood_ruins: 'Древние руины',
+    track_mood_wilds: 'Чаща Лешего',
+    track_mood_boss: 'Решающая схватка',
+    music_player_title: 'Саундтрек Врат',
+    music_carousel_badge: 'Карусель',
+    music_prev: 'Предыдущий трек',
+    music_next: 'Следующий трек',
+    music_play: 'Включить музыку',
+    music_pause: 'Пауза музыки',
+    mobile_wheel_title: 'Навыки',
+    mobile_actions_more: 'Ещё',
   },
   ja: {
     ...EN,
